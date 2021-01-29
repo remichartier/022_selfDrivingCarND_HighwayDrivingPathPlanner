@@ -13,6 +13,13 @@ using nlohmann::json;
 using std::string;
 using std::vector;
 
+/*
+ * HISTORY
+ * v00 : original/initial version - without any changes
+ * v01 : 
+ *
+ */
+
 int main() {
   uWS::Hub h;
 
