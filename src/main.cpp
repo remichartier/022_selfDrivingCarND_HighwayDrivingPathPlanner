@@ -154,14 +154,14 @@ int main() {
           // if previous state is almost empty, use the car as starting reference
           if(prev_size <2){
             // use 2 points that makes the path tangent to the car
-            double prev_car_x = car_x - cos(car_yaw);
-            double prev_car_y = car_y - sin(car_yaw);
+            double prev_car_x = car_x - cos(deg2rad(car_yaw));
+            double prev_car_y = car_y - sin(deg2rad(car_yaw));
                                             
             ptsx.push_back(prev_car_x);
             ptsx.push_back(car_x);
 
             ptsy.push_back(prev_car_y);
-		    ptsy.push_back(car_y);
+            ptsy.push_back(car_y);
           }
           // use the previous path's end point as starting reference
           else{
@@ -188,8 +188,8 @@ int main() {
           ptsx.push_back(next_wp2[0]);
 
           ptsy.push_back(next_wp0[1]);
-          ptsy.push_back(next_wp0[1]);
-          ptsy.push_back(next_wp0[1]);
+          ptsy.push_back(next_wp1[1]);
+          ptsy.push_back(next_wp2[1]);
           
           // move to local coordinates to the car, position 0,0, angle 0
           for(int i=0;i<ptsx.size();++i){
