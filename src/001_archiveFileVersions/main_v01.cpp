@@ -17,7 +17,7 @@ using std::vector;
  * HISTORY
  * v00 : original/initial version - without any changes
  * v01 : test car go straight (now commented)
- * v02 : test car follow track
+ *
  */
 
 int main() {
@@ -114,21 +114,6 @@ int main() {
             next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
           }
           */
-          
-          /**
-          * Test code for car to follow track like in Q&A
-          
-          */
-          double dist_inc = 0.5;
-          for (int i = 0; i < 50; ++i) {
-            
-            double next_s = car_s + (i+1)*dist_inc;
-            double next_d = 6 ; // 4 left lane + 2 half of middle lane
-            vector<double> xy = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            
-            next_x_vals.push_back(xy[0]);
-            next_y_vals.push_back(xy[1]);
-          }
 
 
           msgJson["next_x"] = next_x_vals;
