@@ -7,23 +7,12 @@
 #include "Eigen-3.3/Eigen/QR"
 #include "helpers.h"
 #include "json.hpp"
-
-#include "spline.h" // for polynomials
+#include "spline.h"
 
 // for convenience
 using nlohmann::json;
 using std::string;
 using std::vector;
-
-/*
- * HISTORY
- * v00 : original/initial version - without any changes
- * v01 : test car go straight (now commented)
- * v02 : test car follow track
- * v03 : test with spline.h to smooth the drive following lane. but not working
- * v04 : spline not working
- * v05 : spline video example working
- */
 
 int main() {
   uWS::Hub h;
@@ -61,8 +50,9 @@ int main() {
     map_waypoints_dx.push_back(d_x);
     map_waypoints_dy.push_back(d_y);
   }
+
   
-          
+
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -102,40 +92,6 @@ int main() {
           auto sensor_fusion = j[1]["sensor_fusion"];
 
           json msgJson;
-
-          // vector<double> next_x_vals;
-          // vector<double> next_y_vals;
-
-          /**
-           * TODO: define a path made up of (x,y) points that the car will visit
-           *   sequentially every .02 seconds
-           */
-          
-          /**
-          * Test code to go straight for first time testing simulator
-          
-          double dist_inc = 0.5;
-          for (int i = 0; i < 50; ++i) {
-            next_x_vals.push_back(car_x+(dist_inc*i)*cos(deg2rad(car_yaw)));
-            next_y_vals.push_back(car_y+(dist_inc*i)*sin(deg2rad(car_yaw)));
-          }
-          */
-          
-          /**
-          * Test code for car to follow track like in Q&A
-          double dist_inc = 0.5;
-          for (int i = 0; i < 50; ++i) {
-            double next_s = car_s + (i+1)*dist_inc;
-            double next_d = 6 ; // 4 left lane + 2 half of middle lane
-            vector<double> xy = getXY(next_s, next_d, map_waypoints_s, map_waypoints_x, map_waypoints_y);
-            next_x_vals.push_back(xy[0]);
-            next_y_vals.push_back(xy[1]);
-          }
-          */
-          /**
-          * Test code for car to follow track like in Q&A
-          * with spline to smoothen trajectory
-          */
 
           int prev_size = previous_path_x.size();
 
@@ -236,7 +192,7 @@ int main() {
           // Fill up the rest of the path planner after filling it with previous points, we aim to output 50 pts
           for(int i=1; i <= 50 - previous_path_x.size(); i++)
           {
-          	double N = target_dist/(0.02*ref_vel/2.24);
+          	double N = target_dist/(0.2*ref_vel/2.24);
           	double x_point = x_add_on + target_x / N;
           	double y_point = s(x_point);
 
@@ -255,7 +211,7 @@ int main() {
           	next_x_vals.push_back(x_point);
           	next_y_vals.push_back(y_point);
           }
-          
+
           msgJson["next_x"] = next_x_vals;
           msgJson["next_y"] = next_y_vals;
 
