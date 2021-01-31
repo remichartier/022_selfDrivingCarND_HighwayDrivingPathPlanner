@@ -24,7 +24,6 @@ using std::vector;
  * v04 : spline not working
  * v05 : spline video example working
  * v06 : Tackle avoiding running into cars according to Q&A video
- * v07 : Fix cold start acceleration issue like video example
  */
 
 int main() {
@@ -64,20 +63,9 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
   
-  // drive car in middle lane following track
-  int lane = 1;
-  double ref_vel = 0.0; // 49.5;
           
-  /*
-   * Note the change ...
-   * From original : 
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
-              (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
-               uWS::OpCode opCode) { 
-   */
-  h.onMessage([&ref_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy,&lane]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
     // "42" at the start of the message means there's a websocket message event.
@@ -158,8 +146,8 @@ int main() {
            */
           
           // drive car in middle lane following track
-          //int lane = 1;
-  		  //double ref_vel = 0.0; // 49.5;
+          int lane = 1;
+  		  double ref_vel = 49.5;
           
           // Using Sensor Fusion data to avoid hitting cars
           
@@ -187,28 +175,14 @@ int main() {
               {
                 // do some logic here, lower reference velocity, so we don't crash into the car in front of us, could
                 // also flag to try to change lanes
-                // ref_vel = 29.5; //mph
-                too_close = true;
+                ref_vel = 29.5; //mph
+                // too_close = true
               }
             }
           }
-          
-          // code to adjust incrementally speed changes
-          if(too_close)
-          {
-            ref_vel -= 0.224;
-          }
-          else if(ref_vel < 49.5)
-          {
-            ref_vel += 0.224;
-          }
-          
-          
+            
           // Code to follow lane and full track.
           
-          // Create a list of widely spaced x,y waypoints, evenly spaced at 30 m
-          // Later, we will interpolate those waypoints with a spline and fill it
-          // with more points that control ...
           vector<double> ptsx;
           vector<double> ptsy;
 
