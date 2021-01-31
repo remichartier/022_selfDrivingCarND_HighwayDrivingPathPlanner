@@ -23,6 +23,7 @@ using std::vector;
  * v03 : test with spline.h to smooth the drive following lane. but not working
  * v04 : spline not working
  * v05 : spline video example working
+ * v06 : Tackle avoiding running into cars according to Q&A video
  */
 
 int main() {
@@ -143,8 +144,44 @@ int main() {
            * TODO: define a path made up of (x,y) points that the car will visit
            *   sequentially every .02 seconds
            */
+          
+          // drive car in middle lane following track
           int lane = 1;
   		  double ref_vel = 49.5;
+          
+          // Using Sensor Fusion data to avoid hitting cars
+          
+          if(prev_size > 0){
+            car_s = end_path_s;
+          }
+          
+          bool too_close = false;
+          
+          // find ref_v to use
+          for(int i=0; i < sensor_fusion.size(); i++)
+          {
+            // car is in my lane
+            float d = sensor_fusion[i][6];
+            if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+            {
+              double vx = sensor_fusion[i][3];
+              double vy = sensor_fusion[i][4];
+              double check_speed = sqrt(vx*vx + vy*vy);
+              double check_car_s = sensor_fusion[i][5];
+              
+              check_car_s+=((double)prev_size*0.02*check_speed);//if using previous points can project s value outwards in time
+              // check s values greater than mine and s gap
+              if((check_car_s > car_s) && ((check_car_s - car_s) < 30))
+              {
+                // do some logic here, lower reference velocity, so we don't crash into the car in front of us, could
+                // also flag to try to change lanes
+                ref_vel = 29.5; //mph
+                // too_close = true
+              }
+            }
+          }
+            
+          // Code to follow lane and full track.
           
           vector<double> ptsx;
           vector<double> ptsy;
