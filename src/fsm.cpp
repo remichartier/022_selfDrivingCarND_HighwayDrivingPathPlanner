@@ -7,6 +7,8 @@
  *       Add function isLaneChangeDone()
  * v03 : improve isLaneChangeDone() car_d threshold/range to switch back
  *       to KeepLane state
+ * v04 : Need to implement prediction, then based on prediction, need to decide to change
+ *       lane to Left or Right while in KeepLane State. 
  */
 
 #include <iostream> // for cout, endl

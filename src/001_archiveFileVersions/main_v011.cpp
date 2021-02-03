@@ -1,21 +1,21 @@
 
 /*
  * HISTORY
- * v000 : original/initial version - without any changes
- * v001 : test car go straight (now commented)
- * v002 : test car follow track
- * v003 : test with spline.h to smooth the drive following lane. but not working
- * v004 : spline not working
- * v005 : spline video example working
- * v006 : Tackle avoiding running into cars according to Q&A video
- * v007 : Fix cold start acceleration issue like video example
- * v008 : Implement change lanes when hitting 30 meters before car ahead
- * v009 : Add MAX_ACCEL, MAX_SPEED_MPH, Try to add fsm.cpp and fsm.h  
+ * v00 : original/initial version - without any changes
+ * v01 : test car go straight (now commented)
+ * v02 : test car follow track
+ * v03 : test with spline.h to smooth the drive following lane. but not working
+ * v04 : spline not working
+ * v05 : spline video example working
+ * v06 : Tackle avoiding running into cars according to Q&A video
+ * v07 : Fix cold start acceleration issue like video example
+ * v08 : Implement change lanes when hitting 30 meters before car ahead
+ * v09 : Add MAX_ACCEL, MAX_SPEED_MPH, Try to add fsm.cpp and fsm.h  
  *       to introduce fsm_transition_function() usage
- * v010 : Clean code replaced by fsm_transition_function()
+ * v10 : Clean code replaced by fsm_transition_function()
  *       Prototype change for fsm_transition_function() to switch state
  *       add `state` to honMessage lambda function prototype
- * v011 : Code before test changing trajectory to start at first 2 point first
+ * v11 : Code before test changing trajectory to start at first 2 point first
  *       instead of adding to the whole previous_path_x/previous_path_y ie rebuilding
  *       next_x_vals/next_y_vals from current car_x/car_y rather than from previous_path_x[prev_size -1]
  *       This would allow to functionalize Trajectory Generation and apply chosen trajectory based on 
