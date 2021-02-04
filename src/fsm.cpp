@@ -54,6 +54,7 @@ void fsm_transition_function(int prev_size, double car_s, double car_d, double e
       // return too_close + possible_next_move
       
       // Need to analyse possible_next_move, if empty or not.
+      /*
       if(possible_next_move.size()!=0)
       {
         std::cout << "possible_next_move (0 Keep, 1 Left, 2 right) = ";
@@ -63,10 +64,8 @@ void fsm_transition_function(int prev_size, double car_s, double car_d, double e
         }
         std::cout << std::endl;
       }
-      else
-      {
-        std::cout << "possible_next_move[] empty ! ";
-      }
+      */
+
       
       // decision to KeepLane, LaneChangeRight, LaneChangeLeft
       if(possible_next_move.size()==1) // If only one possibility :
@@ -99,7 +98,7 @@ void fsm_transition_function(int prev_size, double car_s, double car_d, double e
         {
           lane -= 1;
           state = LaneChangeLeft;
-          std::cout << "state --> LaneChangeLeft (would need to study speed)" << std::endl;
+          std::cout << "state --> LaneChangeLeft (would need to study speed to improve decision)" << std::endl;
         }
       }
 
