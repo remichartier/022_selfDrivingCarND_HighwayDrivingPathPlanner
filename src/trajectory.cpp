@@ -1,7 +1,8 @@
 /* trajectory.cpp
  * HISTORY
  * v001 : try to functionalize TrajectoryGeneration(), add trajectory.cpp file
- * v002 : working version so far with bug prev_size fixed      
+ * v002 : working version so far with bug prev_size fixed  
+ * v003 : add input/ouput comments for trajectory_generation()
  */
 #include "trajectory.h"
 #include "spline.h" // for polynomials
@@ -9,11 +10,23 @@
 #include <iostream> // for std::cout / std::endl
 
 
-void trajectoryGeneration(double car_x, double car_y, double car_yaw, double car_s, int prev_size,
+void trajectory_generation(double car_x, double car_y, double car_yaw, double car_s, int prev_size,
                           vector<double> previous_path_x, vector<double> previous_path_y,
                           vector<double> map_waypoints_s, vector<double> map_waypoints_x,
                           vector<double> map_waypoints_y, int lane, double ref_vel,
                           vector<double> &next_x_vals, vector<double> &next_y_vals)
+/* INPUTS :
+ *			- double car_x, car_y, car_yaw, car_s : car position
+ *			- int prev_size : prev_size of points to reuse to build coming Trajectory
+ *			- vector<double> previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x,
+ *                         vector<double> map_waypoints_y
+ *			- int lane : lane # to follow
+ *			- double ref_vel : vehicle velocity
+ *			- vector<double> next_x_vals, next_y_vals : array to define new Trajectory (passed by reference)
+ * OUTPUTS : 
+ *			- - vector<double> next_x_vals, next_y_vals : array to define new Trajectory
+ *			- 
+ */
 {
   // Code to follow lane and full track.
 

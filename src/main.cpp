@@ -189,7 +189,7 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           // call to TRAJECTORY GENERATION, right now to generate trajectory to follow highway waypoints
-          trajectoryGeneration(car_x, car_y, car_yaw, car_s, prev_size,
+          trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
                                previous_path_x, previous_path_y,
                                map_waypoints_s, map_waypoints_x, map_waypoints_y,
                                lane, ref_vel, next_x_vals, next_y_vals);

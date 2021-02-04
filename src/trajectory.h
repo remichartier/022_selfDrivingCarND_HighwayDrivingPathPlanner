@@ -12,7 +12,7 @@
 using std::vector;
 
 
-void trajectoryGeneration(double car_x, double car_y, double car_yaw, double car_s, int prev_size,
+void trajectory_generation(double car_x, double car_y, double car_yaw, double car_s, int prev_size,
                           vector<double> previous_path_x, vector<double> previous_path_y,
                           vector<double> map_waypoints_s, vector<double> map_waypoints_x,
                           vector<double> map_waypoints_y, int lane, double ref_vel,
