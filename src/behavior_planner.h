@@ -33,10 +33,16 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
                              double &ref_vel, vector<vector<double>> sensor_fusion, 
                              int &lane, fsm_state &state);
 
+void bp_adjustAcceleration(int prev_size, double car_s, double end_path_s, 
+                           vector<vector<double>> sensor_fusion, int lane, 
+                           int dist_min,double &ref_vel);
+
 bool bp_isLaneChangeDone(int lane, double car_d);
 
 bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s, 
                             vector<vector<double>> sensor_fusion, int lane, int dist_min);
+
+void bp_possible_steer(vector<fsm_state> &possible_steer,int lane);
 
 void bp_next_lanes_possible(vector<fsm_state> &possible_next_move, bool &too_close,
                             int prev_size, double car_s, double end_path_s, 

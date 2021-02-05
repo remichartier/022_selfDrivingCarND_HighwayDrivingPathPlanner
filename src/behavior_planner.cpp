@@ -42,8 +42,56 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
  *			- fsm state : next state
  *			- double &ref_vel
  */
- vector<fsm_state> possible_next_move;
 
+  
+  // After next_state decision made, need to go through FSM
+  switch(state){
+      
+    case KeepLane :
+      
+      vector<fsm_state> possible_steer;
+
+      // check what is possible ? Straight, Left, Right ?
+      bp_possible_steer(possible_steer,lane); 
+
+      // Now, according to steer possible, evaluate current cost/risk
+      // like if Straight, colliding car head ? Speed car ahead, Distance car ahead, 
+      // Speed car ahead ? Acceleration car ahead ?
+      // Also do same for if Left or Right possible.
+
+      // Need to code here ....
+      //
+      //
+      // Output is state + lane.
+      
+      // At the end of this behavior planning, if decide to KeepLane, but car ahead < 30m
+      // Then need to speed down ... Otherwise, continue to speed up  
+      // Speed Up or Down depending of too_close value
+      bp_adjustAcceleration(prev_size, car_s, end_path_s, sensor_fusion, lane, 
+                           SAFE_DISTANCE_M, ref_vel);
+      break;
+
+    case LaneChangeLeft:
+    case LaneChangeRight:
+      // wait for car position to be at position corresponding to 'lane'
+      // This would indicate LaneChange procedure is over.
+      // If over, then next state should be KeepLane
+      if(bp_isLaneChangeDone(lane, car_d))
+      {
+        state = KeepLane;
+        std::cout << "state --> KeepLane" << std::endl;
+      }
+      break;
+      
+    default:
+      break;
+      
+  } // end switch()
+  
+  
+  
+  
+#if 0
   switch(state){
       
     case KeepLane :
@@ -68,7 +116,6 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         std::cout << std::endl;
       }
       */
-
       
       // decision to KeepLane, LaneChangeRight, LaneChangeLeft
       if(possible_next_move.size()==1) // If only one possibility :
@@ -105,7 +152,6 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         }
       }
 
-      
       // Adjust acceleration depending of cars ahead
       if(too_close)
       {
@@ -151,8 +197,29 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
     default:
       break;
   } // end switch(state)
-
+#endif // 0
+  
 } // end bp_transition_function()
+
+void bp_adjustAcceleration(int prev_size, double car_s, double end_path_s, 
+                           vector<vector<double>> sensor_fusion, int lane, 
+                           int dist_min, double &ref_vel)
+{
+  bool too_close;
+  too_close = bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
+                                     sensor_fusion, lane, SAFE_DISTANCE_M);
+  
+  // Adjust acceleration depending of cars ahead
+  if(too_close)
+  {
+    // code to adjust incrementally speed changes to avoid crashing into car ahead
+    // in the lane
+    ref_vel -= MAX_ACCEL;
+  } else if(ref_vel < MAX_SPEED_MPH)
+  {
+    ref_vel += MAX_ACCEL;
+  }  
+} // end function
 
 
 bool bp_isLaneChangeDone(int lane, double car_d)
@@ -235,6 +302,28 @@ bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s,
   return false;
 }
 
+void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
+{
+/* 
+ * Inputs : 
+ *			- vector<fsm_state> &possible_steer, by reference
+ *			- int lane
+ * Return : 
+ *			- vector<fsm_state> possible_steer
+ */
+  
+  // First possibility is always to KeepLane 
+  possible_steer.push_back(KeepLane);
+  
+  // Next possibility Left ? consider if lane -1 possible
+  if(lane > LANE_MIN) possible_steer.push_back(LaneChangeLeft);  
+  
+  // Next possibility Right ? consider if lane +1 possible
+  if(lane < LANE_MAX) possible_steer.push_back(LaneChangeRight); 
+} // End function
+
+
+
 void bp_next_lanes_possible(vector<fsm_state> &possible_next_move, bool &too_close,
                             int prev_size, double car_s, double end_path_s, 
                             vector<vector<double>> sensor_fusion, int lane)
@@ -246,7 +335,7 @@ void bp_next_lanes_possible(vector<fsm_state> &possible_next_move, bool &too_clo
  *			- double car_s
  *			- double end_path_s
  *			- <vector<vector<double>> sensor_fusion
- *			- int lane by reference
+ *			- int lane 
  * Return : 
  *			- vector<fsm_state> possible_next_move
  *			- bool too_close
