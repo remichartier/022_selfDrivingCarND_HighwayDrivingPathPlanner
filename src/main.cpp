@@ -28,6 +28,7 @@
  * v014 : Working version with TrajectoryGeneration(), removed replaced from TrajectoryGeneration()
  *        Fixed bug on prev_size
  * v015 : move increase/decrease speed to fsm module, MAX_ACCEL, MAX_SPEED_MPH too
+ * v016 : switch to behavior_planner.cpp and .h
  */
 
 #include <uWS/uWS.h>
@@ -41,7 +42,7 @@
 #include "json.hpp"
 
 #include "spline.h" // for polynomials
-#include "fsm.h"
+#include "behavior_planner.h"
 #include "trajectory.h"
 
 
@@ -171,7 +172,7 @@ int main() {
           
           // Using Sensor Fusion data to avoid hitting cars
           // Call to FSM TRANSITION FUNCTION to decide KeepLane or ChangeLane Left or Right
-          fsm_transition_function(prev_size, car_s, car_d, end_path_s, ref_vel,
+          bp_transition_function(prev_size, car_s, car_d, end_path_s, ref_vel,
                                   sensor_fusion, lane, state);
 
           
