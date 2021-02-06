@@ -15,7 +15,7 @@
  *
  * Now call behavior_planner.cpp
  * v001 : re-design to use Cost Functions for Lane Change decisions / FSM state changes
- *        Add bp_indexClosestCarAhead()
+ *        Add bp_indexClosestCarAhead(), bp_lane_decider()
  */
 
 #include <iostream> // for cout, endl
@@ -71,18 +71,26 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       for (int i=0; i < possible_steer.size(); i++)
       {
         double cost(0.0);
+        int index_car_ahead;
+        int index_car_behind;
+        
+        // Start to search index of closest car ahead and behind in this lane
+        //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
+        bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind,
+                        index_car_ahead);
+        
         // colliding car head ? : similar to distance car ahead ---> skip this one
         
         // Distance car ahead,
           // want cost function return : 1 if dist < dist_min,--> dist_min/dist
           // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
-        cost += cost_car_distance_ahead(car_s, sensor_fusion, lane, SAFE_DISTANCE_M,
-                                        next_car_index);
+        cost += cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+                                  index_car_ahead);
         
         // Speed car ahead, 
           // Compare our car ref_vel with next car ahead speed,
           // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-        cost += cost_car_speed_ahead(ref_vel, sensor_fusion,next_car_index);        
+        cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
         
         // Acceleration car ahead ?
           // no straight forward info from sensor_fusion on acceleration
@@ -91,11 +99,20 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         
         // Distance car behind ?
           // similar function as for 'Distance car ahead'
+        cost += cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+                                  index_car_behind);
+        
+        // Speed car behind, 
+          // Compare our car ref_vel with closest car behind's speed,
+          // speed_car_ahead - ref_vel / MAX_SPEED_MPH
+        //cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_behind);  
 
         // store cost of this steer possibility in cost_steer vector
         cost_steer.push_back(cost);
 
       } // end for()
+      
+      bp_lane_decider(possible_steer, cost_steer, lane, state);
         
       
       // Output is state + lane.
@@ -190,7 +207,7 @@ int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion,
  *				the same search again (if no car ahead --> NONE(-1))
  */
 {
-  double s = COST_DIST_MAX;
+  double sdiff = COST_DIST_MAX;
   int next_car_index = NONE ;
   // need to find closest car ahead in the same lane !
 
@@ -202,17 +219,127 @@ int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion,
     {
       double check_car_s = sensor_fusion[i][5];      
       
-        if(check_car_s > car_s)		// if car ahead in the same lane
+        if(check_car_s >= car_s)		// if car ahead in the same lane
         {
-          // if this car closer than previous s --> s
-          s = (check_car_s<s)? check_car_s : s;
-          next_car_index = (check_car_s<s)? i : next_car_index;
+          // if this car closer than previous sdiff --> sdiff          
+          if ((check_car_s - car_s) < sdiff)
+          {
+            sdiff = (check_car_s - car_s);
+            next_car_index = i;
+          } // end if < sdiff
         } // end if car ahead 
     } // end if car ahead in same lane
   } // end for each car  
   return next_car_index;
 } // end function
 
+int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion, 
+                        int lane, int &index_closest_behind,
+                        int &index_closest_ahead)
+ /* 
+ * Inputs : 
+ *			- double car_s
+ *			- <vector<vector<double>> sensor_fusion
+ *			- int lane
+ *			- int &index_closest_behind, by reference
+ *			- int &index_closest_ahead, by reference
+ * Return : 
+ *			- int index_closest_ahead, reused for future cost functions to avoid doing 
+ *				the same search again (if no car ahead --> NONE(-1))
+ *			- int index_closest_behind, reused for future cost functions to avoid doing 
+ */
+{
+  double sdiff_behind = COST_DIST_MAX;
+  double sdiff_ahead = COST_DIST_MAX;
+
+  index_closest_behind = NONE;
+  index_closest_ahead = NONE;
+  // need to find closest car AHEAD/BEHIND in the same lane !
+
+  for(int i=0; i < sensor_fusion.size(); i++)
+  {
+    // car is in my lane
+    float d = sensor_fusion[i][6];
+    if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+    {
+      double check_car_s = sensor_fusion[i][5];      
+      
+      // 1. Test if closest ahead
+      if(check_car_s >= car_s)		// if car BEHIND or AHEAD in the same lane
+      {
+        // if this car closer than previous sdiff --> sdiff          
+        if((check_car_s - car_s) < sdiff_ahead)
+        {
+          sdiff_ahead = check_car_s - car_s;
+          index_closest_ahead = i;
+        } // end if < sdiff
+      } // end if car ahead 
+      
+      // 2. Test if closest behind
+      if(check_car_s <= car_s)		// if car BEHIND or AHEAD in the same lane
+      {
+        // if this car closer than previous sdiff --> sdiff          
+        if((car_s - check_car_s) < sdiff_behind)
+        {
+          sdiff_ahead = car_s - check_car_s;
+          index_closest_behind = i;
+        } // end if < sdiff
+      } // end if car ahead 
+
+    } // end if car ahead in same lane
+  } // end for each car  
+} // end function
+
+
+void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
+                     int &lane, fsm_state &state)
+ /* 
+ * Inputs : 
+ *			- vector<fsm_state> possible_steer
+ *			- vector<double> cost_steer
+ *			- int &lane, by reference
+ *			- fsm_state &state, by reference
+ * Return : 
+ *			- int lane 
+ *			- fsm_state state
+ */  
+{
+  // Note : possible_steer will never be empty, will at least have KeepLane
+  // and one of ChangeLaneLeft or ChangeLaneRight, or both of them as well
+  // So will always have at least 2, at most 3.  
+
+  // Need to choose the steering for which we get the minimum cost
+  int index=0;
+  double cost = cost_steer[0];
+  
+  for(int i=1; i < possible_steer.size(); i++)
+  {
+    if(cost_steer[i] < cost)
+    {
+      cost = cost_steer[i];
+      index = i;
+    } // end if
+  } // end for
+  
+  // Now have the index for the steer with the least cost
+  // set next lane / state
+  switch(possible_steer[index])
+  {
+    case LaneChangeLeft :
+      state = LaneChangeLeft;
+      lane -= 1;
+      std::cout << "state --> LaneChangeLeft" << std::endl;
+      break;
+    case LaneChangeRight :
+      state = LaneChangeRight;
+      lane += 1;
+      std::cout << "state --> LaneChangeRight" << std::endl;
+      break;
+    default: // if KeepLane, nothing to change
+      break;
+  } // end switch()
+  
+} // end function
 
 
 bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s, 

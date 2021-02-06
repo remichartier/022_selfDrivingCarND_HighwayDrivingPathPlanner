@@ -18,8 +18,8 @@ using std::vector;
 #define MAX_SPEED_MPH 		49.5
 
 
-double cost_car_distance_ahead(double car_s, vector<vector<double>> sensor_fusion, 
-                               int lane, int dist_min, int &next_car_index);
+double cost_car_distance(double car_s, vector<vector<double>> sensor_fusion, 
+                               int dist_min, int next_car_index);
 
 double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusion, 
                             int next_car_index);

@@ -10,7 +10,7 @@
  *       with LANE_MIN and LANE_MAX
  * 
  * Now called behavior_planner.h
- * v001 : Add bp_indexClosestCarAhead()
+ * v001 : Add bp_indexClosestCarAhead(), bp_lane_decider()
  */
 
 #ifndef BEHAVIOR_PLANNER_H
@@ -27,6 +27,7 @@ using std::vector;
 #define SAFE_DISTANCE_M		30
 
 enum fsm_state { KeepLane, LaneChangeLeft, LaneChangeRight };
+enum direction { AHEAD, BEHIND};
 
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,
                             double &ref_vel, vector<vector<double>> sensor_fusion, 
@@ -38,9 +39,20 @@ void bp_adjustAcceleration(int prev_size, double car_s, double end_path_s,
 
 bool bp_isLaneChangeDone(int lane, double car_d);
 
+int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion, 
+                        int lane, int &index_closest_behind,
+                        int &index_closest_ahead);
+
+void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
+                     int &lane, fsm_state &state);
+
+
+
+// functions not used anymore I think : 
+
 int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion, 
                                int lane);
-
+  
 bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s, 
                             vector<vector<double>> sensor_fusion, int lane, int dist_min);
 
