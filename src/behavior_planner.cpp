@@ -18,6 +18,12 @@
  *        Add bp_indexClosestCarAhead(), bp_lane_decider()
  */
 
+IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
+  WHEN CHOICE FOR KEEP LANE .... REPLACE THIS COST BY -1.
+  
+PROBLEM AFTER CHANGING LANE TO FIND OUT ... MAY BE USED ANOTHER VARIABLE THAN STATE ????
+  
+  
 #include <iostream> // for cout, endl
 #include "behavior_planner.h"
 #include "cost.h"
