@@ -78,9 +78,23 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         
         // Start to search index of closest car ahead and behind in this lane
         //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
-        bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind,
-                        index_car_ahead);
         
+        switch(possible_steer[i])
+        {
+          case LaneChangeLeft :
+            bp_indexClosestCars(car_s, sensor_fusion, lane-1, index_car_behind,
+                                index_car_ahead);
+            break;
+          case LaneChangeRight :
+            bp_indexClosestCars(car_s, sensor_fusion, lane+1, index_car_behind,
+                        index_car_ahead);
+            break;
+          default: // if KeepLane, nothing to change
+            bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind,
+                        index_car_ahead);
+            break;
+        } // end switch()
+                
         // colliding car head ? : similar to distance car ahead ---> skip this one
         
         // Distance car ahead,
