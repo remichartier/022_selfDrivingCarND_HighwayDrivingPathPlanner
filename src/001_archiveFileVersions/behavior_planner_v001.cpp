@@ -16,9 +16,6 @@
  * Now call behavior_planner.cpp
  * v001 : re-design to use Cost Functions for Lane Change decisions / FSM state changes
  *        Add bp_indexClosestCarAhead(), bp_lane_decider()
- * v002 : Only allow lane change possibilities when forced to speed down
- *        Change bp_adjustAcceleration()
- *        
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -57,122 +54,105 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   // variables initialization needed
   vector<fsm_state> possible_steer;
   vector<double> cost_steer;			// cost vector for each steer possibilities
-  int index_car_ahead_currentLane;
-  int index_car_behind_currentLane;
-  bool need_change_lane;
+  int next_car_index(NONE);				// to optimize sensor_fusion search accross 
+  										// all cost functions, Index of next car in 
+  										// same lane
 
-  // Do this right away so can decide if needs a change or not
-  // in case car ahead it too close ...
-  // Note : do this on the current lane
-  bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind_currentLane,
-                        index_car_ahead_currentLane);
-  
-  // if car ahead < 30m
-  // Then need to speed down ... Otherwise, continue to speed up  
-  // Speed Up or Down depending of too_close value
-  bp_adjustAcceleration(car_s, sensor_fusion, index_car_ahead_currentLane,
-                        SAFE_DISTANCE_M, ref_vel, need_change_lane);
-  // at this point, need_change_lane gives an indication it is better to change lanes
-  // but only do so if current state = KeepLane and not LanechangeLeft or Right
-  
-  
   // FSM to decide next steps and actions
   switch(state){
       
     case KeepLane :
-      if(need_change_lane)
+      // check what is possible ? Straight, Left, Right ?
+      bp_possible_steer(possible_steer,lane); 
+
+      // Now, according to steer possible, evaluate current cost/risk
+      // like if Straight, colliding car head ? Speed car ahead, Distance car ahead, 
+      // Speed car ahead ? Acceleration car ahead ?
+      // Also do same for if Left or Right possible.
+
+      // Note : possible_steer will never be empty, will at least have KeepLane
+      // and one of ChangeLaneLeft or ChangeLaneRight, or both of them as well
+      // So will always have at least 2, at most 3.
+
+      std::cout << "POSSIBLE CHANGES COSTS #############################" << std::endl ;
+      
+      for (int i=0; i < possible_steer.size(); i++)
       {
-        // check what is possible ? Straight, Left, Right ?
-        bp_possible_steer(possible_steer,lane); 
-
-        // Now, according to steer possible, evaluate current cost/risk
-        // like if Straight, colliding car head ? Speed car ahead, Distance car ahead, 
-        // Speed car ahead ? Acceleration car ahead ?
-        // Also do same for if Left or Right possible.
-
-        // Note : possible_steer will never be empty, will at least have KeepLane
-        // and one of ChangeLaneLeft or ChangeLaneRight, or both of them as well
-        // So will always have at least 2, at most 3.
-
-        std::cout << "POSSIBLE CHANGES COSTS #############################" << std::endl ;
-
-        for (int i=0; i < possible_steer.size(); i++)
+        double cost(0.0),cost1,cost2,cost3;
+        int index_car_ahead;
+        int index_car_behind;
+        
+        // Start to search index of closest car ahead and behind in this lane
+        //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
+        
+        switch(possible_steer[i])
         {
-          double cost(0.0),cost1,cost2,cost3;
-          int index_car_ahead;
-          int index_car_behind;
-
-          // Start to search index of closest car ahead and behind in this lane
-          //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
-
-          switch(possible_steer[i])
-          {
-            case LaneChangeLeft :
-              bp_indexClosestCars(car_s, sensor_fusion, lane-1, index_car_behind,
-                                  index_car_ahead);
-              break;
-            case LaneChangeRight :
-              bp_indexClosestCars(car_s, sensor_fusion, lane+1, index_car_behind,
-                                  index_car_ahead);
-              break;
-            default: // if KeepLane, nothing to change
-              // bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind,
-              //            index_car_ahead);
-
-              // Done just before, info in index_car_behind_currentLane and 
-              // index_car_ahead_currentLane
-              index_car_ahead = index_car_ahead_currentLane;
-              index_car_behind = index_car_behind_currentLane;
-              break;
-          } // end switch()
-
-          // colliding car head ? : similar to distance car ahead ---> skip this one
-
-          // Distance car ahead,
+          case LaneChangeLeft :
+            bp_indexClosestCars(car_s, sensor_fusion, lane-1, index_car_behind,
+                                index_car_ahead);
+            break;
+          case LaneChangeRight :
+            bp_indexClosestCars(car_s, sensor_fusion, lane+1, index_car_behind,
+                        index_car_ahead);
+            break;
+          default: // if KeepLane, nothing to change
+            bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind,
+                        index_car_ahead);
+            break;
+        } // end switch()
+                
+        // colliding car head ? : similar to distance car ahead ---> skip this one
+        
+        // Distance car ahead,
           // want cost function return : 1 if dist < dist_min,--> dist_min/dist
           // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
-          cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
-                                    index_car_ahead);
-
-          // Speed car ahead, 
+        cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+                                  index_car_ahead);
+        
+        // Speed car ahead, 
           // Compare our car ref_vel with next car ahead speed,
           // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-          cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
-
-          // Acceleration car ahead ?
+        cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
+        
+        // Acceleration car ahead ?
           // no straight forward info from sensor_fusion on acceleration
           // would need to develop prediction module
           // --> skip for time being
-
-          // Distance car behind ?
+        
+        // Distance car behind ?
           // similar function as for 'Distance car ahead'
-          cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
-                                    index_car_behind);
+        cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+                                  index_car_behind);
+        
+        cost = cost1 + cost2 + cost3;
+        
+        std::cout << "Steering = " << possible_steer[i] << ", " ;
+        std::cout << "costs = " << cost1 << ", " ;
+        std::cout <<  cost2 << ", " ;
+        std::cout <<  cost3 << ", " ;
+        std::cout << "total = " << cost << ", " ;
+        std::cout <<  std::endl ;
 
-          cost = cost1 + cost2 + cost3;
-
-          std::cout << "Steering = " << possible_steer[i] << ", " ;
-          std::cout << "costs = " << cost1 << ", " ;
-          std::cout <<  cost2 << ", " ;
-          std::cout <<  cost3 << ", " ;
-          std::cout << "total = " << cost << ", " ;
-          std::cout <<  std::endl ;
-
-          // Speed car behind, 
+        // Speed car behind, 
           // Compare our car ref_vel with closest car behind's speed,
           // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-          //cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_behind);  
+        //cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_behind);  
 
-          // store cost of this steer possibility in cost_steer vector
-          cost_steer.push_back(cost);
+        // store cost of this steer possibility in cost_steer vector
+        cost_steer.push_back(cost);
 
-        } // end for()
-
-        bp_lane_decider(possible_steer, cost_steer, lane, state);
-
-        // Output is state + lane.
-
-      } // end if need_change_lane
+      } // end for()
+      
+      bp_lane_decider(possible_steer, cost_steer, lane, state);
+        
+      
+      // Output is state + lane.
+      
+      // At the end of this behavior planning, if decide to KeepLane, but car ahead < 30m
+      // Then need to speed down ... Otherwise, continue to speed up  
+      // Speed Up or Down depending of too_close value
+      bp_adjustAcceleration(prev_size, car_s, end_path_s, sensor_fusion, lane, 
+                           SAFE_DISTANCE_M, ref_vel);
       break;
 
     case LaneChangeLeft:
@@ -194,7 +174,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   
 } // end function
 
-#if 0
+
 void bp_adjustAcceleration(int prev_size, double car_s, double end_path_s, 
                            vector<vector<double>> sensor_fusion, int lane, 
                            int dist_min, double &ref_vel)
@@ -226,42 +206,6 @@ void bp_adjustAcceleration(int prev_size, double car_s, double end_path_s,
     ref_vel += MAX_ACCEL;
   }  
 } // end function
-#endif //0
-
-
-void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
-                           int index_car_ahead, int dist_min, double &ref_vel,
-                           bool &too_close)
-/* 
- * Inputs : 
- *			- double car_s
- *			- <vector<vector<double>> sensor_fusion
- *			- int index_car_ahead
- *			- int dist_min
- *			- double ref_vel, by reference
- *			- bool too_close by reference;
- * Outputs :
- *			- double ref_vel
- *			- bool too_close
- */
-{  
-  double car_ahead_s = sensor_fusion[index_car_ahead][5];
-  too_close = false;
-  
-  if((car_ahead_s - car_s) <= dist_min)
-  {
-    too_close = true;
-  
-    // Adjust acceleration depending of cars ahead
-    // code to adjust incrementally speed changes to avoid crashing into car ahead
-    // in the lane
-    ref_vel -= MAX_ACCEL;
-  } else if(ref_vel < MAX_SPEED_MPH)
-  {
-    ref_vel += MAX_ACCEL;
-  }  
-} // end function
-
 
 
 bool bp_isLaneChangeDone(int lane, double car_d)
