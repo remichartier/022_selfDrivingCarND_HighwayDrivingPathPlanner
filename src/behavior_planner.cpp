@@ -14,7 +14,8 @@
  * v007 : 1st algo to decide KeepLane, Left or Right without studing speed, only distances.
  *
  * Now call behavior_planner.cpp
- * v001 : 
+ * v001 : re-design to use Cost Functions for Lane Change decisions / FSM state changes
+ *        Add bp_indexClosestCarAhead()
  */
 
 #include <iostream> // for cout, endl
@@ -47,7 +48,9 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   // variables initialization needed
   vector<fsm_state> possible_steer;
   vector<double> cost_steer;			// cost vector for each steer possibilities
-
+  int next_car_index(NONE);				// to optimize sensor_fusion search accross 
+  										// all cost functions, Index of next car in 
+  										// same lane
 
   // FSM to decide next steps and actions
   switch(state){
@@ -68,19 +71,26 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       for (int i=0; i < possible_steer.size(); i++)
       {
         double cost(0.0);
-        // colliding car head ? : similar to distance car ahead ---> pass this one
+        // colliding car head ? : similar to distance car ahead ---> skip this one
+        
         // Distance car ahead,
-        // want cost function return : 1 if dist < dist_min,--> dist_min/dist
-        // ie with be 1 if dist_min, and decreast propertionnaly if > dist_min ...
-        cost += cost_car_distance_ahead(car_s, sensor_fusion, lane, SAFE_DISTANCE_M);
+          // want cost function return : 1 if dist < dist_min,--> dist_min/dist
+          // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
+        cost += cost_car_distance_ahead(car_s, sensor_fusion, lane, SAFE_DISTANCE_M,
+                                        next_car_index);
         
         // Speed car ahead, 
-        
-        // Speed car ahead ? 
+          // Compare our car ref_vel with next car ahead speed,
+          // speed_car_ahead - ref_vel / MAX_SPEED_MPH
+        cost += cost_car_speed_ahead(ref_vel, sensor_fusion,next_car_index);        
         
         // Acceleration car ahead ?
+          // no straight forward info from sensor_fusion on acceleration
+          // would need to develop prediction module
+          // --> skip for time being
         
         // Distance car behind ?
+          // similar function as for 'Distance car ahead'
 
         // store cost of this steer possibility in cost_steer vector
         cost_steer.push_back(cost);
@@ -166,6 +176,43 @@ bool bp_isLaneChangeDone(int lane, double car_d)
   // std::cout << "car_d : " << car_d << ", (2+4*lane) = " << (2+4*lane) << ", diff = " << diff << std::endl;
   return result;
 }  // end isLaneChangeOver()
+
+
+int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion, 
+                               int lane)
+  /* 
+ * Inputs : 
+ *			- double car_s
+ *			- <vector<vector<double>> sensor_fusion
+ *			- int lane
+ * Return : 
+ *			- int next_car_index, reused for future cost functions to avoid doing 
+ *				the same search again (if no car ahead --> NONE(-1))
+ */
+{
+  double s = COST_DIST_MAX;
+  int next_car_index = NONE ;
+  // need to find closest car ahead in the same lane !
+
+  for(int i=0; i < sensor_fusion.size(); i++)
+  {
+    // car is in my lane
+    float d = sensor_fusion[i][6];
+    if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+    {
+      double check_car_s = sensor_fusion[i][5];      
+      
+        if(check_car_s > car_s)		// if car ahead in the same lane
+        {
+          // if this car closer than previous s --> s
+          s = (check_car_s<s)? check_car_s : s;
+          next_car_index = (check_car_s<s)? i : next_car_index;
+        } // end if car ahead 
+    } // end if car ahead in same lane
+  } // end for each car  
+  return next_car_index;
+} // end function
+
 
 
 bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s, 
