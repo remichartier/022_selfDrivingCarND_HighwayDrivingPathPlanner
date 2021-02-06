@@ -68,9 +68,11 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       // and one of ChangeLaneLeft or ChangeLaneRight, or both of them as well
       // So will always have at least 2, at most 3.
 
+      std::cout << "POSSIBLE CHANGES COSTS #############################" << std::endl ;
+      
       for (int i=0; i < possible_steer.size(); i++)
       {
-        double cost(0.0);
+        double cost(0.0),cost1,cost2,cost3;
         int index_car_ahead;
         int index_car_behind;
         
@@ -84,13 +86,13 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         // Distance car ahead,
           // want cost function return : 1 if dist < dist_min,--> dist_min/dist
           // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
-        cost += cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+        cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
                                   index_car_ahead);
         
         // Speed car ahead, 
           // Compare our car ref_vel with next car ahead speed,
           // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-        cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
+        cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
         
         // Acceleration car ahead ?
           // no straight forward info from sensor_fusion on acceleration
@@ -99,9 +101,18 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         
         // Distance car behind ?
           // similar function as for 'Distance car ahead'
-        cost += cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+        cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
                                   index_car_behind);
         
+        cost = cost1 + cost2 + cost3;
+        
+        std::cout << "Steering = " << possible_steer[i] << ", " ;
+        std::cout << "costs = " << cost1 << ", " ;
+        std::cout <<  cost2 << ", " ;
+        std::cout <<  cost3 << ", " ;
+        std::cout << "total = " << cost << ", " ;
+        std::cout <<  std::endl ;
+
         // Speed car behind, 
           // Compare our car ref_vel with closest car behind's speed,
           // speed_car_ahead - ref_vel / MAX_SPEED_MPH
