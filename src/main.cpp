@@ -205,7 +205,7 @@ int main() {
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
     }  // end websocket if
-    cout << "Enter h.onMessage()" << endl;
+    cout << "Exit h.onMessage()" << endl;
 
   }); // end h.onMessage
 

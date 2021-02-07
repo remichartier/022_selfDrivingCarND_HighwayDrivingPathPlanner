@@ -262,8 +262,10 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
  */
 {  
   double car_ahead_s = sensor_fusion[index_car_ahead][5];
+  cout << "double car_ahead_s = sensor_fusion[index_car_ahead][5]; =" << index_car_ahead <<","<<sensor_fusion[index_car_ahead][5]<<  endl;
   too_close = false;
-  
+  cout << "too_close = false;" << endl;
+
   std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
   std::cout << ", car_s = " << car_s ;
   
