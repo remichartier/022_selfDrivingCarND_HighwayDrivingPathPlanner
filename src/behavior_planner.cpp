@@ -18,7 +18,7 @@
  *        Add bp_indexClosestCarAhead(), bp_lane_decider()
  * v002 : Only allow lane change possibilities when forced to speed down
  *        Change bp_adjustAcceleration()
- *        Add debug prints
+ *        Add debug prints, fix segmentation fault / Core Dumped
  *        
  */
 
@@ -261,18 +261,23 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
  *			- bool too_close
  */
 {  
-  double car_ahead_s = sensor_fusion[index_car_ahead][5];
-  cout << "double car_ahead_s = sensor_fusion[index_car_ahead][5]; =" << index_car_ahead <<","<<sensor_fusion[index_car_ahead][5]<<  endl;
   too_close = false;
   cout << "too_close = false;" << endl;
 
-  std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
-  std::cout << ", car_s = " << car_s ;
-  
-  if((car_ahead_s - car_s) <= dist_min)
+  if(index_car_ahead != NONE)
   {
-    too_close = true;
+    double car_ahead_s = sensor_fusion[index_car_ahead][5];
+    cout << "double car_ahead_s = sensor_fusion[index_car_ahead][5]; =" << index_car_ahead <<","<<sensor_fusion[index_car_ahead][5]<<  endl;
+
+    std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
+    std::cout << ", car_s = " << car_s ;
   
+    if((car_ahead_s - car_s) <= dist_min)
+    {
+      too_close = true;
+    }
+  }
+  if(too_close = true){
     // Adjust acceleration depending of cars ahead
     // code to adjust incrementally speed changes to avoid crashing into car ahead
     // in the lane
@@ -287,7 +292,6 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
   
   } else if(ref_vel < MAX_SPEED_MPH)
   {
-   
     std::cout << ", speed UP, ref_vel = " << ref_vel ;
     ref_vel += MAX_ACCEL;
   }  
