@@ -29,14 +29,17 @@ double cost_car_distance(double car_s, vector<vector<double>> sensor_fusion,
  *			- double cost
  */
 {
-  if(next_car_index == NONE) return -1;
-  
+  if(next_car_index == NONE)
+  {
+    cout << "distance = " << " no cars; ";
+    return -1;
+  }
   // if car ahead exists on same lane :
   
   double s = sensor_fusion[next_car_index][5];;
   // here s contains the coordinate of the next car ahead of car_s in the same lane
   double dist = s - car_s;
-  cout << "distance = " << dist << "meters; ";
+  cout << "distance = " << dist << " meters; ";
   if(dist == 0)
   {
     std::cout << "cost_car_distance_ahead() ERROR : dist = 0 can not divide by 0" << std::endl;
@@ -63,14 +66,17 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
  *			- double cost
  */
 {
-  if(next_car_index == NONE) return -1;
-  
+  if(next_car_index == NONE) 
+  {
+    cout << "speed_ahead = " << "no cars; " ;
+    return -1;
+  }
   // retrieve next car speed
   double vx = sensor_fusion[next_car_index][3];
   double vy = sensor_fusion[next_car_index][4];
   double speed_ahead = sqrt(vx*vx + vy*vy); // Note : this is in m/s
   speed_ahead *= METERPERSECOND2MPH; // Note : converting to MPH
-  cout << "speed_ahead = " << speed_ahead << "mph; " << endl ;
+  cout << "speed_ahead = " << speed_ahead << " mph; " ;
   return ((ref_vel - speed_ahead) / MAX_SPEED_MPH);
   
 } // end function
