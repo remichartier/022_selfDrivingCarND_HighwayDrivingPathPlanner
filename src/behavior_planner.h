@@ -11,6 +11,7 @@
  * 
  * Now called behavior_planner.h
  * v001 : Add bp_indexClosestCarAhead(), bp_lane_decider(), change bp_adjustAcceleration()
+ * v002 : add SAFE_DISTANCE_BEHIND_M, to avoid hitting lateral cars. Increase SAFE_DISTANCE_M
  */
 
 #ifndef BEHAVIOR_PLANNER_H
@@ -24,8 +25,8 @@ using std::vector;
 #define MAX_ACCEL 			0.224
 #define LANE_MAX			2
 #define LANE_MIN			0
-#define SAFE_DISTANCE_M		30
-#define SAFE_DISTANCE_BEHIND_M		40
+#define SAFE_DISTANCE_M		50
+#define SAFE_DISTANCE_BEHIND_M		50
 
 enum fsm_state { KeepLane, LaneChangeLeft, LaneChangeRight };
 enum direction { AHEAD, BEHIND};

@@ -21,6 +21,7 @@
  *        Add debug prints, fix segmentation fault / Core Dumped
  * v003 : comment some debug prints, raise Distance for car behind, and 
  *        if KeepLane, cost for car distance behind --> 0, because should not count.
+ *        Add weight=2 to cost2 (speed car ahead)
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -146,7 +147,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
           // Speed car ahead, 
           // Compare our car ref_vel with next car ahead speed,
           // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-          cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
+          cost2 = 2*cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
 
           // Acceleration car ahead ?
           // no straight forward info from sensor_fusion on acceleration
@@ -220,39 +221,6 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   //std::cout << "Exit bp_transition_function(), state = "<< state << ", lane = " << lane << std::endl;
 } // end function
 
-#if 0
-void bp_adjustAcceleration(int prev_size, double car_s, double end_path_s, 
-                           vector<vector<double>> sensor_fusion, int lane, 
-                           int dist_min, double &ref_vel)
-/* 
- * Inputs : 
- *			- int prev_size
- *			- double car_s
- *			- double end_path_s
- *			- <vector<vector<double>> sensor_fusion
- *			- int lane
- *			- int dist_min
- *			- double &ref_vel, by reference
- * Outputs :
- *			- double ref_vel
- */
-{
-  bool too_close;
-  too_close = bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
-                                     sensor_fusion, lane, SAFE_DISTANCE_M);
-  
-  // Adjust acceleration depending of cars ahead
-  if(too_close)
-  {
-    // code to adjust incrementally speed changes to avoid crashing into car ahead
-    // in the lane
-    ref_vel -= MAX_ACCEL;
-  } else if(ref_vel < MAX_SPEED_MPH)
-  {
-    ref_vel += MAX_ACCEL;
-  }  
-} // end function
-#endif //0
 
 
 void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
@@ -298,15 +266,14 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
     {
       ref_vel = 0;
     }
-    std::cout << ", speed DOWN, ref_vel = " << ref_vel ;
+    std::cout << ", speed DOWN, ref_vel = " << ref_vel << std::endl ;
   
   } else if(ref_vel < MAX_SPEED_MPH)
   {
-    std::cout << ", speed UP, ref_vel = " << ref_vel ;
+    std::cout << ", speed UP, ref_vel = " << ref_vel << std::endl;
     ref_vel += MAX_ACCEL;
   }  
   //std::cout << ", exit too_close = " << too_close;
-  std::cout << std::endl;
 } // end function
 
 
