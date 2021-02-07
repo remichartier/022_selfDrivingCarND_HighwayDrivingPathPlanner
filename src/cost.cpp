@@ -4,6 +4,7 @@
  *       cost_car_speed_ahead()
  *       debug prints for distance and speed, correction speed
  *       comparison, speed in m/s, need to convert into mph
+ * v02 : add cost_car_cutting_lane_ahead()
  */
 
 #include <iostream> // for cout, endl
@@ -80,3 +81,39 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
   return ((ref_vel - speed_ahead) / MAX_SPEED_MPH);
   
 } // end function
+
+// Cost car ahead in current lane switching to same lane 
+double cost_car_cutting_lane_ahead(vector<vector<double>> sensor_fusion, int lane, fsm_state action, int index_car_ahead)
+/* 
+ * Inputs : 
+ *			- <vector<vector<double>> sensor_fusion
+ *			- int lane (current lane)
+ *			- fsm_state action (action considered)
+ *			- int next_car_index, reused to avoid search in sensor_fusion 
+ *				(if no car ahead --> NONE(-1))
+ * Return : 
+ *			- double cost
+ */
+{
+  int lane_candidate;
+  double diff_ratio;
+  if(index_car_ahead == NONE) return 0.0;
+  if(action == KeepLane) return 0.0;
+  //if(action == ChangeLaneRight) lane_candidate = lane + 1;
+  //if(action == ChangeLaneLeft) lane_candidate = lane -1;
+  double d_car_ahead = sensor_fusion[index_car_ahead][6];
+  
+  if(action == LaneChangeRight)
+  // need to measure deviation from (2 + 4*lane) to (4 + 4*lane) and divide by 2
+  {
+    diff_ratio = ((4 + 4*lane) - d_car_ahead)/ 2;
+  }
+  else
+  {
+    // need to measure deviation from (4*lane) and (2 + 4*lane) and divide by 2
+	diff_ratio = ((2 + 4*lane) - d_car_ahead)/ 2;
+  }
+  
+  return diff_ratio;
+  
+}

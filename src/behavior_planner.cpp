@@ -22,6 +22,7 @@
  * v003 : comment some debug prints, raise Distance for car behind, and 
  *        if KeepLane, cost for car distance behind --> 0, because should not count.
  *        add changeLaneCounter
+ * v004 : add cost_car_cutting_lane_ahead()
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -109,7 +110,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
         for (int i=0; i < possible_steer.size(); i++)
         {
-          double cost(0.0),cost1,cost2,cost3;
+          double cost(0.0),cost1,cost2,cost3,cost4;
           int index_car_ahead;
           int index_car_behind;
 
@@ -169,12 +170,23 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
             cost3 = 0;
           }
           
-          cost = cost1 + cost2 + cost3;
+          // risk car ahead doing same move as our car
+          if (possible_steer[i]!=KeepLane)
+          {
+            cost4 = cost_car_cutting_lane_ahead(sensor_fusion, lane, possible_steer[i], index_car_ahead);
+          }
+          else
+          {
+            cost4 = 0;
+          }
+          
+          cost = cost1 + cost2 + cost3 + cost4;
 
           std::cout << "Steering = " << possible_steer[i] << ", " ;
           std::cout << "costs = " << cost1 << ", " ;
           std::cout <<  cost2 << ", " ;
           std::cout <<  cost3 << ", " ;
+          std::cout <<  cost4 << ", " ;
           std::cout << "total = " << cost << ", " ;
           std::cout <<  std::endl ;
 
