@@ -19,7 +19,8 @@
  * v002 : Only allow lane change possibilities when forced to speed down
  *        Change bp_adjustAcceleration()
  *        Add debug prints, fix segmentation fault / Core Dumped
- * v003 : comment some debug prints       
+ * v003 : comment some debug prints, raise Distance for car behind, and 
+ *        if KeepLane, cost for car distance behind --> 0, because should not count.
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -154,9 +155,18 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
           // Distance car behind ?
           // similar function as for 'Distance car ahead'
-          cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
-                                    index_car_behind);
-
+          // but if KeepLane, car distance behind shoul not count --> -1 ?
+          
+          if(possible_steer[i]!=KeepLane)
+          {
+            // NOTE : use SAFE_DISTANCE_BEHIND_M instead of SAFE_DISTANCE_M
+            cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
+                                      index_car_behind);
+          } else
+          {
+            cost3 = 0;
+          }
+          
           cost = cost1 + cost2 + cost3;
 
           std::cout << "Steering = " << possible_steer[i] << ", " ;
@@ -296,7 +306,7 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
     ref_vel += MAX_ACCEL;
   }  
   //std::cout << ", exit too_close = " << too_close;
-  //std::cout << std::endl;
+  std::cout << std::endl;
 } // end function
 
 
