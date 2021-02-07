@@ -18,6 +18,7 @@
  *        Add bp_indexClosestCarAhead(), bp_lane_decider()
  * v002 : Only allow lane change possibilities when forced to speed down
  *        Change bp_adjustAcceleration()
+ *        Add debug prints
  *        
  */
 
@@ -32,6 +33,8 @@
 #include "cost.h"
 
 // using std::vector;
+using std::cout;
+using std::endl;
 
 
 // usually : transition_function(predictions, current_fsm_state, current_pose, cost_functions, weights)
@@ -65,18 +68,20 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   // Do this right away so can decide if needs a change or not
   // in case car ahead it too close ...
   // Note : do this on the current lane
+  std::cout << "call bp_indexClosestCars()" << std::endl;
   bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind_currentLane,
                         index_car_ahead_currentLane);
   
   // if car ahead < 30m
   // Then need to speed down ... Otherwise, continue to speed up  
   // Speed Up or Down depending of too_close value
+  std::cout << "call bp_adjustAcceleration()" << std::endl;
   bp_adjustAcceleration(car_s, sensor_fusion, index_car_ahead_currentLane,
                         SAFE_DISTANCE_M, ref_vel, need_change_lane);
   // at this point, need_change_lane gives an indication it is better to change lanes
   // but only do so if current state = KeepLane and not LanechangeLeft or Right
   
-  
+  std::cout << "Enter switch(state)" << std::endl;
   // FSM to decide next steps and actions
   switch(state){
       
@@ -85,6 +90,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       if(need_change_lane)
       {
         // check what is possible ? Straight, Left, Right ?
+       std::cout << "Call bp_possible_steer()" << need_change_lane << std::endl;
         bp_possible_steer(possible_steer,lane); 
 
         // Now, according to steer possible, evaluate current cost/risk
@@ -169,7 +175,8 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
           cost_steer.push_back(cost);
 
         } // end for()
-
+		
+        cout << "call bp_lane_decider()" << endl;
         bp_lane_decider(possible_steer, cost_steer, lane, state);
 
         // Output is state + lane.
@@ -197,6 +204,8 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       break;
       
   } // end switch()
+  std::cout << "Exit switch(state)" << std::endl;
+
   
   std::cout << "Exit bp_transition_function(), state = "<< state << ", lane = " << lane << std::endl;
 } // end function

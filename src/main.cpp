@@ -29,6 +29,7 @@
  *        Fixed bug on prev_size
  * v015 : move increase/decrease speed to fsm module, MAX_ACCEL, MAX_SPEED_MPH too
  * v016 : switch to behavior_planner.cpp and .h
+ * v017 : add debut prints
  */
 
 #include <uWS/uWS.h>
@@ -52,6 +53,8 @@
 using nlohmann::json;
 using std::string;
 using std::vector;
+using std::cout;
+using std::endl; 
 
 
 int main() {
@@ -110,6 +113,7 @@ int main() {
                &map_waypoints_dx,&map_waypoints_dy,&lane,&state]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
+    cout << "Enter h.onMessage()" << endl;
     // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
     // The 2 signifies a websocket event
@@ -172,6 +176,7 @@ int main() {
           
           // Using Sensor Fusion data to avoid hitting cars
           // Call to FSM TRANSITION FUNCTION to decide KeepLane or ChangeLane Left or Right
+          std::cout << "call bp_transition_function("<<lane<<","<<state<<")"<<std::endl;
           bp_transition_function(prev_size, car_s, car_d, end_path_s, ref_vel,
                                   sensor_fusion, lane, state);
 
@@ -180,6 +185,7 @@ int main() {
           vector<double> next_x_vals;
           vector<double> next_y_vals;
           // call to TRAJECTORY GENERATION, right now to generate trajectory to follow highway waypoints
+          std::cout << "call trajectory_generation("<<lane<<")"<<std::endl;
           trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
                                previous_path_x, previous_path_y,
                                map_waypoints_s, map_waypoints_x, map_waypoints_y,
@@ -199,6 +205,8 @@ int main() {
         ws.send(msg.data(), msg.length(), uWS::OpCode::TEXT);
       }
     }  // end websocket if
+    cout << "Enter h.onMessage()" << endl;
+
   }); // end h.onMessage
 
   h.onConnection([&h](uWS::WebSocket<uWS::SERVER> ws, uWS::HttpRequest req) {
