@@ -19,7 +19,7 @@
  * v002 : Only allow lane change possibilities when forced to speed down
  *        Change bp_adjustAcceleration()
  *        Add debug prints, fix segmentation fault / Core Dumped
- *        
+ * v003 : comment some debug prints       
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -64,33 +64,33 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   int index_car_behind_currentLane;
   bool need_change_lane;
 
-  std::cout << "Enter bp_transition_function()" << std::endl;
+  //std::cout << "Enter bp_transition_function()" << std::endl;
   // Do this right away so can decide if needs a change or not
   // in case car ahead it too close ...
   // Note : do this on the current lane
-  std::cout << "call bp_indexClosestCars()" << std::endl;
+  //std::cout << "call bp_indexClosestCars()" << std::endl;
   bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind_currentLane,
                         index_car_ahead_currentLane);
   
   // if car ahead < 30m
   // Then need to speed down ... Otherwise, continue to speed up  
   // Speed Up or Down depending of too_close value
-  std::cout << "call bp_adjustAcceleration()" << std::endl;
+  //std::cout << "call bp_adjustAcceleration()" << std::endl;
   bp_adjustAcceleration(car_s, sensor_fusion, index_car_ahead_currentLane,
                         SAFE_DISTANCE_M, ref_vel, need_change_lane);
   // at this point, need_change_lane gives an indication it is better to change lanes
   // but only do so if current state = KeepLane and not LanechangeLeft or Right
   
-  std::cout << "Enter switch(state)" << std::endl;
+  //std::cout << "Enter switch(state)" << std::endl;
   // FSM to decide next steps and actions
   switch(state){
       
     case KeepLane :
-      std::cout << "FSM KeepLane, need_change_lane = " << need_change_lane << std::endl;
+      //std::cout << "FSM KeepLane, need_change_lane = " << need_change_lane << std::endl;
       if(need_change_lane)
       {
         // check what is possible ? Straight, Left, Right ?
-       std::cout << "Call bp_possible_steer()" << need_change_lane << std::endl;
+        //std::cout << "Call bp_possible_steer()" << need_change_lane << std::endl;
         bp_possible_steer(possible_steer,lane); 
 
         // Now, according to steer possible, evaluate current cost/risk
@@ -175,8 +175,8 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
           cost_steer.push_back(cost);
 
         } // end for()
-		
-        cout << "call bp_lane_decider()" << endl;
+        
+        //cout << "call bp_lane_decider()" << endl;
         bp_lane_decider(possible_steer, cost_steer, lane, state);
 
         // Output is state + lane.
@@ -186,13 +186,13 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
     case LaneChangeLeft:
     case LaneChangeRight:
-      std::cout << "FSM LaneChangeLeft or Right, need_change_lane = " << need_change_lane;
-      std::cout << ", lane = " << lane << std::endl;
+      // std::cout << "FSM LaneChangeLeft or Right, need_change_lane = " << need_change_lane;
+      // std::cout << ", lane = " << lane << std::endl;
 
       // wait for car position to be at position corresponding to 'lane'
       // This would indicate LaneChange procedure is over.
       // If over, then next state should be KeepLane
-      std::cout << "call bp_isLaneChangeDone() " << std::endl;
+      // std::cout << "call bp_isLaneChangeDone() " << std::endl;
       if(bp_isLaneChangeDone(lane, car_d))
       {
         state = KeepLane;
@@ -204,10 +204,10 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       break;
       
   } // end switch()
-  std::cout << "Exit switch(state)" << std::endl;
+  //std::cout << "Exit switch(state)" << std::endl;
 
   
-  std::cout << "Exit bp_transition_function(), state = "<< state << ", lane = " << lane << std::endl;
+  //std::cout << "Exit bp_transition_function(), state = "<< state << ", lane = " << lane << std::endl;
 } // end function
 
 #if 0
@@ -262,22 +262,22 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
  */
 {  
   too_close = false;
-  cout << "too_close = false;" << endl;
+  //cout << "too_close = false;" << endl;
 
   if(index_car_ahead != NONE)
   {
     double car_ahead_s = sensor_fusion[index_car_ahead][5];
-    cout << "double car_ahead_s = sensor_fusion[index_car_ahead][5]; =" << index_car_ahead <<","<<sensor_fusion[index_car_ahead][5]<<  endl;
+    //cout << "double car_ahead_s = sensor_fusion[index_car_ahead][5]; =" << index_car_ahead <<","<<sensor_fusion[index_car_ahead][5]<<  endl;
 
-    std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
-    std::cout << ", car_s = " << car_s ;
+    //std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
+    //std::cout << ", car_s = " << car_s ;
   
     if((car_ahead_s - car_s) <= dist_min)
     {
       too_close = true;
     }
   }
-  if(too_close = true){
+  if(too_close == true){
     // Adjust acceleration depending of cars ahead
     // code to adjust incrementally speed changes to avoid crashing into car ahead
     // in the lane
@@ -295,8 +295,8 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
     std::cout << ", speed UP, ref_vel = " << ref_vel ;
     ref_vel += MAX_ACCEL;
   }  
-  std::cout << ", exit too_close = " << too_close;
-  std::cout << std::endl;
+  //std::cout << ", exit too_close = " << too_close;
+  //std::cout << std::endl;
 } // end function
 
 
