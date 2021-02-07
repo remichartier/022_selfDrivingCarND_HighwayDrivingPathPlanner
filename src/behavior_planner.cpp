@@ -21,7 +21,7 @@
  *        Add debug prints, fix segmentation fault / Core Dumped
  * v003 : comment some debug prints, raise Distance for car behind, and 
  *        if KeepLane, cost for car distance behind --> 0, because should not count.
- *        Add weight=2 to cost2 (speed car ahead)
+ *        add changeLaneCounter
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -41,7 +41,8 @@ using std::endl;
 
 // usually : transition_function(predictions, current_fsm_state, current_pose, cost_functions, weights)
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,double &ref_vel,
-                             vector<vector<double>> sensor_fusion, int &lane, fsm_state &state)
+                            vector<vector<double>> sensor_fusion, int &lane, fsm_state &state, 
+                           int &changeLaneCounter)
 {
 /* 
  * Inputs : 
@@ -146,8 +147,8 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
           // Speed car ahead, 
           // Compare our car ref_vel with next car ahead speed,
-          // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-          cost2 = 2*cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
+          // ref_vel - speed_car_ahead / MAX_SPEED_MPH
+          cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
 
           // Acceleration car ahead ?
           // no straight forward info from sensor_fusion on acceleration
@@ -188,7 +189,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         } // end for()
         
         //cout << "call bp_lane_decider()" << endl;
-        bp_lane_decider(possible_steer, cost_steer, lane, state);
+        bp_lane_decider(possible_steer, cost_steer, lane, state, changeLaneCounter);
 
         // Output is state + lane.
 
@@ -393,16 +394,18 @@ int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion,
 
 
 void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
-                     int &lane, fsm_state &state)
+                     int &lane, fsm_state &state, int &changeLaneCounter)
  /* 
  * Inputs : 
  *			- vector<fsm_state> possible_steer
  *			- vector<double> cost_steer
  *			- int &lane, by reference
  *			- fsm_state &state, by reference
+ *			- int changeLaneCounter, by reference
  * Return : 
  *			- int lane 
  *			- fsm_state state
+ *			- int changeLaneCounter
  */  
 {
   // Note : possible_steer will never be empty, will at least have KeepLane
@@ -429,12 +432,14 @@ void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer
     case LaneChangeLeft :
       state = LaneChangeLeft;
       lane -= 1;
-      std::cout << "state --> LaneChangeLeft" << std::endl;
+      changeLaneCounter ++;
+      std::cout << "state --> LaneChangeLeft(#" << changeLaneCounter << ")" <<std::endl;
       break;
     case LaneChangeRight :
       state = LaneChangeRight;
       lane += 1;
-      std::cout << "state --> LaneChangeRight" << std::endl;
+      changeLaneCounter ++;
+      std::cout << "state --> LaneChangeRight(#" << changeLaneCounter << ")" <<std::endl;
       break;
     default: // if KeepLane, nothing to change
       break;

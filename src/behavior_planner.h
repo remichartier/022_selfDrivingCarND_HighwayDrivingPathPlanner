@@ -12,6 +12,7 @@
  * Now called behavior_planner.h
  * v001 : Add bp_indexClosestCarAhead(), bp_lane_decider(), change bp_adjustAcceleration()
  * v002 : add SAFE_DISTANCE_BEHIND_M, to avoid hitting lateral cars. Increase SAFE_DISTANCE_M
+ *        add changeLaneCounter
  */
 
 #ifndef BEHAVIOR_PLANNER_H
@@ -33,7 +34,7 @@ enum direction { AHEAD, BEHIND};
 
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,
                             double &ref_vel, vector<vector<double>> sensor_fusion, 
-                            int &lane, fsm_state &state);
+                            int &lane, fsm_state &state, int &changeLaneCounter);
 
 void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
                            int index_car_ahead, int dist_min, double &ref_vel,
@@ -46,7 +47,7 @@ int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion,
                         int &index_closest_ahead);
 
 void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
-                     int &lane, fsm_state &state);
+                     int &lane, fsm_state &state, int &changeLaneCounter);
 
 
 

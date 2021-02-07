@@ -29,7 +29,7 @@
  *        Fixed bug on prev_size
  * v015 : move increase/decrease speed to fsm module, MAX_ACCEL, MAX_SPEED_MPH too
  * v016 : switch to behavior_planner.cpp and .h
- * v017 : add debut prints, then comment them
+ * v017 : add debut prints, then comment them. Add changeLaneCounter.
  */
 
 #include <uWS/uWS.h>
@@ -100,7 +100,10 @@ int main() {
   
   // initialise FSM state at the begining
   fsm_state state = KeepLane;
-          
+  
+  // changeLaneCounter to study logs for specific changes
+  int changeLaneCounter = 0;
+  
   /*
    * Note the change ...
    * From original : 
@@ -110,7 +113,7 @@ int main() {
                uWS::OpCode opCode) { 
    */
   h.onMessage([&ref_vel,&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
-               &map_waypoints_dx,&map_waypoints_dy,&lane,&state]
+               &map_waypoints_dx,&map_waypoints_dy,&lane,&state,&changeLaneCounter]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
 
@@ -180,7 +183,7 @@ int main() {
           // Call to FSM TRANSITION FUNCTION to decide KeepLane or ChangeLane Left or Right
           // std::cout << "call bp_transition_function("<<lane<<","<<state<<")"<<std::endl;
           bp_transition_function(prev_size, car_s, car_d, end_path_s, ref_vel,
-                                  sensor_fusion, lane, state);
+                                  sensor_fusion, lane, state, changeLaneCounter);
 
           
           // Define the actual (x,y) points we will use for the planner
