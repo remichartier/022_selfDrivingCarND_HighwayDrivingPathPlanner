@@ -61,6 +61,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   int index_car_behind_currentLane;
   bool need_change_lane;
 
+  std::cout << "Enter bp_transition_function()" << std::endl;
   // Do this right away so can decide if needs a change or not
   // in case car ahead it too close ...
   // Note : do this on the current lane
@@ -80,6 +81,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
   switch(state){
       
     case KeepLane :
+      std::cout << "FSM KeepLane, need_change_lane = " << need_change_lane << std::endl;
       if(need_change_lane)
       {
         // check what is possible ? Straight, Left, Right ?
@@ -177,9 +179,13 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
     case LaneChangeLeft:
     case LaneChangeRight:
+      std::cout << "FSM LaneChangeLeft or Right, need_change_lane = " << need_change_lane;
+      std::cout << ", lane = " << lane << std::endl;
+
       // wait for car position to be at position corresponding to 'lane'
       // This would indicate LaneChange procedure is over.
       // If over, then next state should be KeepLane
+      std::cout << "call bp_isLaneChangeDone() " << std::endl;
       if(bp_isLaneChangeDone(lane, car_d))
       {
         state = KeepLane;
@@ -192,6 +198,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       
   } // end switch()
   
+  std::cout << "Exit bp_transition_function(), state = "<< state << ", lane = " << lane << std::endl;
 } // end function
 
 #if 0
@@ -248,6 +255,9 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
   double car_ahead_s = sensor_fusion[index_car_ahead][5];
   too_close = false;
   
+  std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
+  std::cout << ", car_s = " << car_s ;
+  
   if((car_ahead_s - car_s) <= dist_min)
   {
     too_close = true;
@@ -255,11 +265,23 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
     // Adjust acceleration depending of cars ahead
     // code to adjust incrementally speed changes to avoid crashing into car ahead
     // in the lane
-    ref_vel -= MAX_ACCEL;
+    if(ref_vel - MAX_ACCEL >0)
+    {
+      ref_vel -= MAX_ACCEL;
+    } else
+    {
+      ref_vel = 0;
+    }
+    std::cout << ", speed DOWN, ref_vel = " << ref_vel ;
+  
   } else if(ref_vel < MAX_SPEED_MPH)
   {
+   
+    std::cout << ", speed UP, ref_vel = " << ref_vel ;
     ref_vel += MAX_ACCEL;
   }  
+  std::cout << ", exit too_close = " << too_close;
+  std::cout << std::endl;
 } // end function
 
 
