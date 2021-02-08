@@ -27,6 +27,7 @@
  *        Add int bp_next_lane()
  *        Add call to trajectory generation bp_generate_trajectories()
  *        Call prediction_get()
+ *        Add bp_compute_cost_states()
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -158,6 +159,11 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
         std::cout << "POSSIBLE CHANGES COSTS #############################" << std::endl ;
 
+        bp_compute_cost_states(car_s, sensor_fusion,possible_steer,lane,
+                            index_car_ahead_currentLane, index_car_behind_currentLane,
+                            ref_vel, cost_steer);
+        
+#if 0
         for (int i=0; i < possible_steer.size(); i++)
         {
           double cost(0.0),cost1,cost2,cost3,cost4;
@@ -241,9 +247,11 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
         } // end for()
         
+#endif // 1
+        
+        
         //cout << "call bp_lane_decider()" << endl;
         bp_lane_decider(possible_steer, cost_steer, lane, state, changeLaneCounter);
-
         // Output is state + lane.
 
       } // end if need_change_lane
@@ -276,6 +284,110 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 } // end function
 
 
+
+void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion, 
+                            vector<fsm_state> possible_steer, int lane,
+                            int index_car_ahead_currentLane,
+                            int index_car_behind_currentLane,
+                            double ref_vel, vector<double> &cost_steer)
+/* 
+ * Inputs : 
+ *			- double car_s, 
+ *			- vector<vector<double>> sensor_fusion
+ *			- vector<fsm_state> possible_steer
+ *			- int lane
+ *			- int index_car_ahead_currentLane,
+ *			- int index_car_behind_currentLane,
+ *			- double ref_vel
+ *			- vector<double> cost_steer, by reference
+ * Outputs :
+ *			- vector<double> cost_steer
+*/
+{
+  for (int i=0; i < possible_steer.size(); i++)
+  {
+    double cost(0.0),cost1,cost2,cost3,cost4;
+    int index_car_ahead;
+    int index_car_behind;
+
+    // Start to search index of closest car ahead and behind in this lane
+    //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
+    int next_lane = bp_next_lane(possible_steer[i], lane);
+    if(possible_steer[i] != KeepLane)
+    {
+      bp_indexClosestCars(car_s, sensor_fusion, next_lane, index_car_behind,
+                          index_car_ahead);
+    } else
+    {
+      // Done just before, info in index_car_behind_currentLane and 
+      // index_car_ahead_currentLane
+      index_car_ahead = index_car_ahead_currentLane;
+      index_car_behind = index_car_behind_currentLane;
+    }
+
+    // colliding car head ? : similar to distance car ahead ---> skip this one
+
+    // Distance car ahead,
+    // want cost function return : 1 if dist < dist_min,--> dist_min/dist
+    // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
+    cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+                              index_car_ahead);
+
+    // Speed car ahead, 
+    // Compare our car ref_vel with next car ahead speed,
+    // ref_vel - speed_car_ahead / MAX_SPEED_MPH
+    cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
+
+    // Acceleration car ahead ?
+    // no straight forward info from sensor_fusion on acceleration
+    // would need to develop prediction module
+    // --> skip for time being
+
+    // Distance car behind ?
+    // similar function as for 'Distance car ahead'
+    // but if KeepLane, car distance behind shoul not count --> -1 ?
+
+    if(possible_steer[i]!=KeepLane)
+    {
+      // NOTE : use SAFE_DISTANCE_BEHIND_M instead of SAFE_DISTANCE_M
+      cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
+                                index_car_behind);
+    } else
+    {
+      cost3 = 0;
+    }
+
+    // risk car ahead doing same move as our car
+    if (possible_steer[i]!=KeepLane)
+    {
+      cost4 = cost_car_cutting_lane_ahead(sensor_fusion, lane, possible_steer[i], index_car_ahead);
+    }
+    else
+    {
+      cost4 = 0;
+    }
+
+    cost = cost1 + cost2 + cost3 + cost4;
+
+    std::cout << "Steering = " << possible_steer[i] << ", " ;
+    std::cout << "costs = " << cost1 << ", " ;
+    std::cout <<  cost2 << ", " ;
+    std::cout <<  cost3 << ", " ;
+    std::cout <<  cost4 << ", " ;
+    std::cout << "total = " << cost << ", " ;
+    std::cout <<  std::endl ;
+
+    // Speed car behind, 
+    // Compare our car ref_vel with closest car behind's speed,
+    // speed_car_ahead - ref_vel / MAX_SPEED_MPH
+    //cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_behind);  
+
+    // store cost of this steer possibility in cost_steer vector
+    cost_steer.push_back(cost);
+
+  } // end for()
+  
+}
 
 void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
                            int index_car_ahead, int dist_min, double &ref_vel,
