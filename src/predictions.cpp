@@ -3,9 +3,11 @@
  * v001 : first version with fsm_transition_function()
  */
 
+#include "constants.h"
 #include "predictions.h"
 
-void prediction_get(double car_s, double ref_vel,
+
+void predictions_get(double car_s, double ref_vel,
                     vector<vector<double>> sensor_fusion,
                    double &car_s_predict,
                    vector<double> &predictions)
@@ -35,19 +37,24 @@ void prediction_get(double car_s, double ref_vel,
     std::cout << "This causes program TERMINATION - exit(EXIT_FAILURE)" << std::endl;
     exit(EXIT_FAILURE);
   }
+  
   double t_hour = 30.0 * METER2MILE / ref_vel;
+  double t_seconds = t_hour * 60 * 60;
+
+  // Now take car about our car prediction
+  car_s_predict = ref_vel * t_hour; // Note : ref_vel is in miles per hour !!!
+  // Now need to convert from miles to meters
+  car_s_predict = car_s_predict / METER2MILE ;
+  
+  // Now take care about our sensor_fusion predictions
+  // sensor_fusion data is in meters and seconds !!!
   for(int i=0; i<sensor_fusion.size();i++)
   {
-    double s = sensor_fusion[i][5];
-    double speed = sensor_fusion[i][];
-    
+    double speed_mps = get_index_speed_meterps(sensor_fusion, i); // meter per seconds
+    double s_pos = sensor_fusion[i][5];
+    double s_next = s_pos + (speed_mps * t_seconds);
+    predictions.push_back(s_next);
   } // end for
   
-  
+  // And so output will be car_s_predict and predictions[]
 } // end function
-
-// constructor
-Prediction::prediction(int id, double s_value)
-{
-  
-}

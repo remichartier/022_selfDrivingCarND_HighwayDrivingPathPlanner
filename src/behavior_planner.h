@@ -25,12 +25,6 @@
 
 using std::vector;
 
-#define MAX_ACCEL 			0.224
-#define LANE_MAX			2
-#define LANE_MIN			0
-#define SAFE_DISTANCE_M		50
-#define SAFE_DISTANCE_BEHIND_M		50
-
 
 enum fsm_state { KeepLane, LaneChangeLeft, LaneChangeRight };
 enum direction { AHEAD, BEHIND};

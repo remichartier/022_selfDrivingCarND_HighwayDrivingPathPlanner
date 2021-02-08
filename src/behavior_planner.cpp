@@ -40,6 +40,7 @@
 #include "cost.h"
 #include "trajectory.h"
 #include "predictions.h"
+#include "constants.h"
 
 // using std::vector;
 using std::cout;
@@ -114,7 +115,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         //std::cout << "Call bp_possible_steer()" << need_change_lane << std::endl;
         bp_possible_steer(possible_steer,lane); 
 
-        
+#if 0 // CF LATER COMMENT FOR PREDICTIONS --> NO NEED TO GENERATE ALL THOSE TRAJECTORIES        
         // Now need to generate trajectories for each possible_steer
         vector<vector<double>> trajectories_x;
         vector<vector<double>> trajectories_y;
@@ -125,6 +126,8 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
                                  map_waypoints_s, map_waypoints_x,
                                  map_waypoints_y, ref_vel);
 
+#endif // 0
+        
         // Now, need to generate predictions (positions of car_s + 30)
         // car will be at which t for 30 meters ?
         // ref_vel (mph)= m/h = 30 meters in miles / t
@@ -133,8 +136,16 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         // So will have to predict all cars given t and given their own velocity.
         // Then, knowing the indexes of closest next and behind cars, will know their predictions
         // after t duration, and can then calculate the costs.
-        prediction_get(double car_s, double ref_vel, vector<vector<double>> sensor_fusion);
+        double car_s_predict;
+        vector<double> predictions;
         
+        // STOP !!!!! PREDICTIONS WOULD NEED THE TRAJECTORY TO CALCULATE CAR_S_PREDICT ...
+        // IN FACT NOT NECESSARILY, IN S FRENET, STRAIGHT LINE --> NO NEED OF TRAJECTORY ....
+        // IE NO NEED OF PREVIOUS FUNCTION bp_generate_trajectories() ...
+        // TRY TO COMPILE EVERYTHING FIST, THEN WILL DEAL WITH THIS ISSUE ...
+        predictions_get(car_s, ref_vel, sensor_fusion, car_s_predict, predictions);
+        
+        // NOW NEED TO ADAPT COST FUNCTIONS TO USE TRAJECTORIES AND PREDICTIONS
         
         // Now, according to steer possible, evaluate current cost/risk
         // like if Straight, colliding car head ? Speed car ahead, Distance car ahead, 

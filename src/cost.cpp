@@ -11,6 +11,9 @@
 #include <stdlib.h> // for EXIT_FAILURE
 #include <math.h> // for sqrt()
 #include "cost.h"
+#include "constants.h"
+#include "sensor_fusion.h"
+
 using std::cout;
 using std::endl;
 
@@ -73,11 +76,14 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
     return -1;
   }
   // retrieve next car speed
+  double speed_ahead = get_index_speed_milesph(sensor_fusion, int next_car_index);
+#if 0  
   double vx = sensor_fusion[next_car_index][3];
   double vy = sensor_fusion[next_car_index][4];
   double speed_ahead = sqrt(vx*vx + vy*vy); // Note : this is in m/s
   speed_ahead *= METERPERSECOND2MPH; // Note : converting to MPH
   cout << "speed_ahead = " << speed_ahead << " mph; " ;
+#endif // 0
   return ((ref_vel - speed_ahead) / MAX_SPEED_MPH);
   
 } // end function

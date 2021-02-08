@@ -17,15 +17,6 @@
 using std::vector;
 
 #define COST_DIST_MAX	6945.554
-#define NONE			-1
-#define MAX_SPEED_MPH 		49.5
-/*
-1 meter = 0.000621371 miles.
-Each second :  0.000621371 miles
-Each hour = 1s 60 * 60 → 60 *60 *  0.000621371 miles = 2.2369356 miles
-→ 1m/s = 2.2369356 mph
-*/
-#define METERPERSECOND2MPH	2.2369356
 
 
 double cost_car_distance(double car_s, vector<vector<double>> sensor_fusion, 
