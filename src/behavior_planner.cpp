@@ -89,7 +89,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
   //std::cout << "Enter bp_transition_function()" << std::endl;
   // Do this right away so can decide if needs a change or not
-  // in case car ahead it too close ...
+  // in case car ahead is too close ...
   // Note : do this on the current lane
   //std::cout << "call bp_indexClosestCars()" << std::endl;
   bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind_currentLane,
@@ -126,11 +126,10 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
                                  previous_path_x, previous_path_y,
                                  map_waypoints_s, map_waypoints_x,
                                  map_waypoints_y, ref_vel);
-
 #endif // 0
         
         // Now, need to generate predictions (positions of car_s + 30)
-        // car will be at which t for 30 meters ?
+        // car will be at which t in 30 meters ?
         // ref_vel (mph)= m/h = 30 meters in miles / t
         // t = 30 meters in miles / ref_vel
         // t in hour = 30 * METER2MILE / ref_vel
@@ -140,11 +139,11 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         double car_s_predict;
         vector<double> predictions;
         
-        // STOP !!!!! PREDICTIONS WOULD NEED THE TRAJECTORY TO CALCULATE CAR_S_PREDICT ...
+        // NOTE: PREDICTIONS WOULD NEED THE TRAJECTORY TO CALCULATE CAR_S_PREDICT ...
         // IN FACT NOT NECESSARILY, IN S FRENET, STRAIGHT LINE --> NO NEED OF TRAJECTORY ....
         // IE NO NEED OF PREVIOUS FUNCTION bp_generate_trajectories() ...
-        // TRY TO COMPILE EVERYTHING FIST, THEN WILL DEAL WITH THIS ISSUE ...
         predictions_get(car_s, ref_vel, sensor_fusion, car_s_predict, predictions);
+        // Note : output is 'car_s_predict´ and 'predictions'
         
         // NOW NEED TO ADAPT COST FUNCTIONS TO USE TRAJECTORIES AND PREDICTIONS
         
@@ -161,93 +160,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
         bp_compute_cost_states(car_s, sensor_fusion,possible_steer,lane,
                             index_car_ahead_currentLane, index_car_behind_currentLane,
-                            ref_vel, cost_steer);
-        
-#if 0
-        for (int i=0; i < possible_steer.size(); i++)
-        {
-          double cost(0.0),cost1,cost2,cost3,cost4;
-          int index_car_ahead;
-          int index_car_behind;
-
-          // Start to search index of closest car ahead and behind in this lane
-          //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
-          int next_lane = bp_next_lane(possible_steer[i], lane);
-          if(possible_steer[i] != KeepLane)
-          {
-            bp_indexClosestCars(car_s, sensor_fusion, next_lane, index_car_behind,
-                                  index_car_ahead);
-          } else
-          {
-            // Done just before, info in index_car_behind_currentLane and 
-            // index_car_ahead_currentLane
-            index_car_ahead = index_car_ahead_currentLane;
-            index_car_behind = index_car_behind_currentLane;
-          }
-          
-          // colliding car head ? : similar to distance car ahead ---> skip this one
-
-          // Distance car ahead,
-          // want cost function return : 1 if dist < dist_min,--> dist_min/dist
-          // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
-          cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
-                                    index_car_ahead);
-
-          // Speed car ahead, 
-          // Compare our car ref_vel with next car ahead speed,
-          // ref_vel - speed_car_ahead / MAX_SPEED_MPH
-          cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
-
-          // Acceleration car ahead ?
-          // no straight forward info from sensor_fusion on acceleration
-          // would need to develop prediction module
-          // --> skip for time being
-
-          // Distance car behind ?
-          // similar function as for 'Distance car ahead'
-          // but if KeepLane, car distance behind shoul not count --> -1 ?
-          
-          if(possible_steer[i]!=KeepLane)
-          {
-            // NOTE : use SAFE_DISTANCE_BEHIND_M instead of SAFE_DISTANCE_M
-            cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
-                                      index_car_behind);
-          } else
-          {
-            cost3 = 0;
-          }
-          
-          // risk car ahead doing same move as our car
-          if (possible_steer[i]!=KeepLane)
-          {
-            cost4 = cost_car_cutting_lane_ahead(sensor_fusion, lane, possible_steer[i], index_car_ahead);
-          }
-          else
-          {
-            cost4 = 0;
-          }
-          
-          cost = cost1 + cost2 + cost3 + cost4;
-
-          std::cout << "Steering = " << possible_steer[i] << ", " ;
-          std::cout << "costs = " << cost1 << ", " ;
-          std::cout <<  cost2 << ", " ;
-          std::cout <<  cost3 << ", " ;
-          std::cout <<  cost4 << ", " ;
-          std::cout << "total = " << cost << ", " ;
-          std::cout <<  std::endl ;
-
-          // Speed car behind, 
-          // Compare our car ref_vel with closest car behind's speed,
-          // speed_car_ahead - ref_vel / MAX_SPEED_MPH
-          //cost += cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_behind);  
-
-          // store cost of this steer possibility in cost_steer vector
-          cost_steer.push_back(cost);
-
-        } // end for()
-        
-#endif // 1
+                            ref_vel, cost_steer); // output is 'cost_steer' vector
         
         
         //cout << "call bp_lane_decider()" << endl;
@@ -262,7 +175,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       // std::cout << "FSM LaneChangeLeft or Right, need_change_lane = " << need_change_lane;
       // std::cout << ", lane = " << lane << std::endl;
 
-      // wait for car position to be at position corresponding to 'lane'
+      // wait for car position to be at position (d) corresponding to 'lane'
       // This would indicate LaneChange procedure is over.
       // If over, then next state should be KeepLane
       // std::cout << "call bp_isLaneChangeDone() " << std::endl;
