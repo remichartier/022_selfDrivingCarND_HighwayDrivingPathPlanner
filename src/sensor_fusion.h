@@ -12,8 +12,8 @@
 
 using std::vector;
 
-double get_index_speed_meterps(vector<vector<double>> sensor_fusion, int index);
+double sf_get_speed_meterps(vector<vector<double>> sensor_fusion, int index);
 
-double get_index_speed_milesph(vector<vector<double>> sensor_fusion, int index);
+double sf_get_speed_milesph(vector<vector<double>> sensor_fusion, int index);
 
 #endif  // SENSOR_FUSION_H

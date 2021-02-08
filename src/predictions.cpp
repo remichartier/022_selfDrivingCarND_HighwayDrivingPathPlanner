@@ -3,9 +3,14 @@
  * v001 : first version with fsm_transition_function()
  */
 
+#include <iostream> // for cout, endl
+#include <stdlib.h> // for EXIT_FAILURE
 #include "constants.h"
+#include "sensor_fusion.h"
 #include "predictions.h"
 
+using std::cout;
+using std::endl;
 
 void predictions_get(double car_s, double ref_vel,
                     vector<vector<double>> sensor_fusion,
@@ -50,7 +55,7 @@ void predictions_get(double car_s, double ref_vel,
   // sensor_fusion data is in meters and seconds !!!
   for(int i=0; i<sensor_fusion.size();i++)
   {
-    double speed_mps = get_index_speed_meterps(sensor_fusion, i); // meter per seconds
+    double speed_mps = sf_get_speed_meterps(sensor_fusion, i); // meter per seconds
     double s_pos = sensor_fusion[i][5];
     double s_next = s_pos + (speed_mps * t_seconds);
     predictions.push_back(s_next);

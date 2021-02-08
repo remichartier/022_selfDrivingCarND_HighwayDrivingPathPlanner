@@ -76,7 +76,7 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
     return -1;
   }
   // retrieve next car speed
-  double speed_ahead = get_index_speed_milesph(sensor_fusion, int next_car_index);
+  double speed_ahead = sf_get_speed_milesph(sensor_fusion, next_car_index);
 #if 0  
   double vx = sensor_fusion[next_car_index][3];
   double vy = sensor_fusion[next_car_index][4];

@@ -4,8 +4,9 @@
  */
 #include <math.h> // for sqrt()
 #include "sensor_fusion.h"
+#include "constants.h"
 
-double get_index_speed_meterps(vector<vector<double>> sensor_fusion, int index)
+double sf_get_speed_meterps(vector<vector<double>> sensor_fusion, int index)
 /* 
  * Inputs : 
  *			- <vector<vector<double>> sensor_fusion
@@ -20,7 +21,7 @@ double get_index_speed_meterps(vector<vector<double>> sensor_fusion, int index)
   return speed;
 } // end function
 
-double get_index_speed_milesph(vector<vector<double>> sensor_fusion, int index)
+double sf_get_speed_milesph(vector<vector<double>> sensor_fusion, int index)
 /* 
  * Inputs : 
  *			- <vector<vector<double>> sensor_fusion
@@ -29,7 +30,7 @@ double get_index_speed_milesph(vector<vector<double>> sensor_fusion, int index)
  *			- double speed, in mph
  */
 {
-  double speed = get_index_speed_meterps(sensor_fusion, index); // Note : this is in m/s
+  double speed = sf_get_speed_meterps(sensor_fusion, index); // Note : this is in m/s
   speed *= METERPERSECOND2MPH; // Note : converting to MPH
   return speed;
 } // end function
