@@ -23,6 +23,7 @@
  *        if KeepLane, cost for car distance behind --> 0, because should not count.
  *        add changeLaneCounter
  * v004 : add cost_car_cutting_lane_ahead()
+ *        Generate trajectories for each prediction (KeepLane, LaneChangeLeft, LaneChangeRight)
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -43,7 +44,12 @@ using std::endl;
 // usually : transition_function(predictions, current_fsm_state, current_pose, cost_functions, weights)
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,double &ref_vel,
                             vector<vector<double>> sensor_fusion, int &lane, fsm_state &state, 
-                           int &changeLaneCounter)
+                            int &changeLaneCounter,
+                            double car_x, double car_y, double car_yaw,
+                            vector<double> previous_path_x, vector<double> previous_path_y,
+                            vector<double> map_waypoints_s, vector<double> map_waypoints_x,
+                            vector<double> map_waypoints_y, 
+                            vector<double> &next_x_vals, vector<double> &next_y_vals)
 {
 /* 
  * Inputs : 
@@ -55,10 +61,16 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
  *			- <vector<vector<double>> sensor_fusion
  *			- int lane by reference
  *			- fsm state : current state, by reference
+ *			FOR GENERATING TRAJECTORIES : 
+ *			- double car_x, car_y, car_yaw : car position
+ *			- vector<double> previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x,
+ *                         vector<double> map_waypoints_y
+ *			- vector<double> next_x_vals, next_y_vals : array to define new Trajectory (passed by reference) 
  * Outputs :
  *			- int lane
  *			- fsm state : next state
  *			- double &ref_vel
+ *			- vector<double> next_x_vals, next_y_vals : array to define new Trajectory (passed by reference) 
  */
 
   // variables initialization needed
@@ -105,7 +117,23 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         // Note : possible_steer will never be empty, will at least have KeepLane
         // and one of ChangeLaneLeft or ChangeLaneRight, or both of them as well
         // So will always have at least 2, at most 3.
-
+        
+        // Now need to generate trajectories for each possible_steer
+        // vector<double> &next_x_vals, vector<double> &next_y_vals
+        vector<vector<double>> trajectories_x;
+        vector<vector<double>> trajectories_y;
+        for (int i=0; i < possible_steer.size(); i++)
+        {
+          vector<double>> path_x;
+          vector<double>> path_y;
+          int next_lane;
+          if (possible_steer[i] == KeepLane) next_lane = lane;
+          if (possible_steer[i] == LaneChangeLeft) next_lane = lane -1;
+          if (possible_steer[i] == LaneChangeRight) next_lane = lane +1;
+          
+          
+        
+        }
         std::cout << "POSSIBLE CHANGES COSTS #############################" << std::endl ;
 
         for (int i=0; i < possible_steer.size(); i++)

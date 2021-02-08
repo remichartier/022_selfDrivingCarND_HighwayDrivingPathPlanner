@@ -13,6 +13,7 @@
  * v001 : Add bp_indexClosestCarAhead(), bp_lane_decider(), change bp_adjustAcceleration()
  * v002 : add SAFE_DISTANCE_BEHIND_M, to avoid hitting lateral cars. Increase SAFE_DISTANCE_M
  *        add changeLaneCounter
+ * v003 : Generate trajectories for each prediction (KeepLane, LaneChangeLeft, LaneChangeRight)
  */
 
 #ifndef BEHAVIOR_PLANNER_H
@@ -34,7 +35,12 @@ enum direction { AHEAD, BEHIND};
 
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,
                             double &ref_vel, vector<vector<double>> sensor_fusion, 
-                            int &lane, fsm_state &state, int &changeLaneCounter);
+                            int &lane, fsm_state &state, int &changeLaneCounter,
+                            double car_x, double car_y, double car_yaw,
+                            vector<double> previous_path_x, vector<double> previous_path_y,
+                            vector<double> map_waypoints_s, vector<double> map_waypoints_x,
+                            vector<double> map_waypoints_y, 
+                            vector<double> &next_x_vals, vector<double> &next_y_vals);
 
 void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
                            int index_car_ahead, int dist_min, double &ref_vel,
