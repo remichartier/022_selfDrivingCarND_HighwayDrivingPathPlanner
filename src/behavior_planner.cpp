@@ -24,6 +24,9 @@
  *        add changeLaneCounter
  * v004 : add cost_car_cutting_lane_ahead()
  *        Generate trajectories for each prediction (KeepLane, LaneChangeLeft, LaneChangeRight)
+ *        Add int bp_next_lane()
+ *        Add call to trajectory generation bp_generate_trajectories()
+ *        Call prediction_get()
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -35,6 +38,8 @@
 #include <iostream> // for cout, endl
 #include "behavior_planner.h"
 #include "cost.h"
+#include "trajectory.h"
+#include "predictions.h"
 
 // using std::vector;
 using std::cout;
@@ -109,6 +114,28 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         //std::cout << "Call bp_possible_steer()" << need_change_lane << std::endl;
         bp_possible_steer(possible_steer,lane); 
 
+        
+        // Now need to generate trajectories for each possible_steer
+        vector<vector<double>> trajectories_x;
+        vector<vector<double>> trajectories_y;
+        
+        bp_generate_trajectories(trajectories_x, trajectories_y,possible_steer,lane,
+                                 car_x, car_y, car_yaw, car_s, prev_size,
+                                 previous_path_x, previous_path_y,
+                                 map_waypoints_s, map_waypoints_x,
+                                 map_waypoints_y, ref_vel);
+
+        // Now, need to generate predictions (positions of car_s + 30)
+        // car will be at which t for 30 meters ?
+        // ref_vel (mph)= m/h = 30 meters in miles / t
+        // t = 30 meters in miles / ref_vel
+        // t in hour = 30 * METER2MILE / ref_vel
+        // So will have to predict all cars given t and given their own velocity.
+        // Then, knowing the indexes of closest next and behind cars, will know their predictions
+        // after t duration, and can then calculate the costs.
+        prediction_get(double car_s, double ref_vel, vector<vector<double>> sensor_fusion);
+        
+        
         // Now, according to steer possible, evaluate current cost/risk
         // like if Straight, colliding car head ? Speed car ahead, Distance car ahead, 
         // Speed car ahead ? Acceleration car ahead ?
@@ -117,23 +144,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
         // Note : possible_steer will never be empty, will at least have KeepLane
         // and one of ChangeLaneLeft or ChangeLaneRight, or both of them as well
         // So will always have at least 2, at most 3.
-        
-        // Now need to generate trajectories for each possible_steer
-        // vector<double> &next_x_vals, vector<double> &next_y_vals
-        vector<vector<double>> trajectories_x;
-        vector<vector<double>> trajectories_y;
-        for (int i=0; i < possible_steer.size(); i++)
-        {
-          vector<double>> path_x;
-          vector<double>> path_y;
-          int next_lane;
-          if (possible_steer[i] == KeepLane) next_lane = lane;
-          if (possible_steer[i] == LaneChangeLeft) next_lane = lane -1;
-          if (possible_steer[i] == LaneChangeRight) next_lane = lane +1;
-          
-          
-        
-        }
+
         std::cout << "POSSIBLE CHANGES COSTS #############################" << std::endl ;
 
         for (int i=0; i < possible_steer.size(); i++)
@@ -144,28 +155,19 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
           // Start to search index of closest car ahead and behind in this lane
           //index_car_ahead = bp_indexClosestCarAhead(car_s, sensor_fusion,lane);
-
-          switch(possible_steer[i])
+          int next_lane = bp_next_lane(possible_steer[i], lane);
+          if(possible_steer[i] != KeepLane)
           {
-            case LaneChangeLeft :
-              bp_indexClosestCars(car_s, sensor_fusion, lane-1, index_car_behind,
+            bp_indexClosestCars(car_s, sensor_fusion, next_lane, index_car_behind,
                                   index_car_ahead);
-              break;
-            case LaneChangeRight :
-              bp_indexClosestCars(car_s, sensor_fusion, lane+1, index_car_behind,
-                                  index_car_ahead);
-              break;
-            default: // if KeepLane, nothing to change
-              // bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind,
-              //            index_car_ahead);
-
-              // Done just before, info in index_car_behind_currentLane and 
-              // index_car_ahead_currentLane
-              index_car_ahead = index_car_ahead_currentLane;
-              index_car_behind = index_car_behind_currentLane;
-              break;
-          } // end switch()
-
+          } else
+          {
+            // Done just before, info in index_car_behind_currentLane and 
+            // index_car_ahead_currentLane
+            index_car_ahead = index_car_ahead_currentLane;
+            index_car_behind = index_car_behind_currentLane;
+          }
+          
           // colliding car head ? : similar to distance car ahead ---> skip this one
 
           // Distance car ahead,
@@ -335,6 +337,61 @@ bool bp_isLaneChangeDone(int lane, double car_d)
   // std::cout << "car_d : " << car_d << ", (2+4*lane) = " << (2+4*lane) << ", diff = " << diff << std::endl;
   return result;
 }  // end isLaneChangeOver()
+
+
+int bp_next_lane(fsm_state state, int lane)
+/* 
+ * Inputs : 
+ *			- fsm_state state
+ *			- int lane
+ * Return :
+ *			- int next lane
+ */
+{
+  if (state == KeepLane) return lane;
+  if (state == LaneChangeLeft) return(lane -1);
+  if (state == LaneChangeRight) return(lane +1);
+} // end function
+
+
+void bp_generate_trajectories(vector<vector<double>> &trajectories_x,
+                              vector<vector<double>> &trajectories_y,
+                              vector<fsm_state> possible_steer, int lane,
+                              double car_x, double car_y, double car_yaw, double car_s, int prev_size,
+                              vector<double> previous_path_x, vector<double> previous_path_y,
+                              vector<double> map_waypoints_s, vector<double> map_waypoints_x,
+                              vector<double> map_waypoints_y, double ref_vel)
+/* INPUTS :
+ *			- vector<double> trajectories_x, trajectories_y, by reference : array to define new Trajectories
+ *			- vector<fsm_state> possible_steer
+ *			- int lane
+ *			- double car_x, car_y, car_yaw, car_s : car position
+ *			- int prev_size : prev_size of points to reuse to build coming Trajectory
+ *			- vector<double> previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x,
+ *                         vector<double> map_waypoints_y
+ *			- double ref_vel : vehicle velocity
+ *			- vector<double> next_x_vals, next_y_vals : array to define new Trajectory (passed by reference)
+ * OUTPUTS : 
+ *			- - vector<double> trajectories_x, trajectories_y : array to define new Trajectories
+ *			- 
+ */
+{
+  for (int i=0; i < possible_steer.size(); i++)
+  {
+    vector<double> path_x;
+    vector<double> path_y;
+    int next_lane = bp_next_lane(possible_steer[i],lane);
+
+    trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
+                          previous_path_x, previous_path_y,
+                          map_waypoints_s, map_waypoints_x, map_waypoints_y,
+                          next_lane, ref_vel, path_x, path_y);
+
+    trajectories_x.push_back(path_x);
+    trajectories_y.push_back(path_y);
+  } // end for
+} // end function
+
 
 
 int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion, 

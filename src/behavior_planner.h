@@ -13,7 +13,8 @@
  * v001 : Add bp_indexClosestCarAhead(), bp_lane_decider(), change bp_adjustAcceleration()
  * v002 : add SAFE_DISTANCE_BEHIND_M, to avoid hitting lateral cars. Increase SAFE_DISTANCE_M
  *        add changeLaneCounter
- * v003 : Generate trajectories for each prediction (KeepLane, LaneChangeLeft, LaneChangeRight)
+ * v003 : Generate trajectories for each prediction (KeepLane, LaneChangeLeft, LaneChangeRight
+ *        Add int bp_next_lane()
  */
 
 #ifndef BEHAVIOR_PLANNER_H
@@ -29,6 +30,7 @@ using std::vector;
 #define LANE_MIN			0
 #define SAFE_DISTANCE_M		50
 #define SAFE_DISTANCE_BEHIND_M		50
+
 
 enum fsm_state { KeepLane, LaneChangeLeft, LaneChangeRight };
 enum direction { AHEAD, BEHIND};
@@ -55,7 +57,15 @@ int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion,
 void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
                      int &lane, fsm_state &state, int &changeLaneCounter);
 
+int bp_next_lane(fsm_state state, int lane);
 
+void bp_generate_trajectories(vector<vector<double>> &trajectories_x,
+                              vector<vector<double>> &trajectories_y,
+                              vector<fsm_state> possible_steer, int lane,
+                              double car_x, double car_y, double car_yaw, double car_s, int prev_size,
+                              vector<double> previous_path_x, vector<double> previous_path_y,
+                              vector<double> map_waypoints_s, vector<double> map_waypoints_x,
+                              vector<double> map_waypoints_y, double ref_vel);
 
 // functions not used anymore I think : 
 
