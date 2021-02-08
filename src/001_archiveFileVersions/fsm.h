@@ -15,7 +15,6 @@
 
 #include <vector>
 #include <math.h>
-#include "fsm.h"
 
 using std::vector;
 

@@ -179,25 +179,17 @@ int main() {
           
           // bool too_close; // to trigger increase/decrease acceleration
           
-          // Define the actual (x,y) points we will use for the planner
-          vector<double> next_x_vals;
-          vector<double> next_y_vals;
-          // Pass those to bp_transition_function() to return the chosen trajectory as an output
-          
           // Using Sensor Fusion data to avoid hitting cars
           // Call to FSM TRANSITION FUNCTION to decide KeepLane or ChangeLane Left or Right
           // std::cout << "call bp_transition_function("<<lane<<","<<state<<")"<<std::endl;
           bp_transition_function(prev_size, car_s, car_d, end_path_s, ref_vel,
-                                 sensor_fusion, lane, state, changeLaneCounter,
-                                 car_x, car_y, car_yaw,
-                                 previous_path_x, previous_path_y,
-                                 map_waypoints_s, map_waypoints_x, map_waypoints_y,
-                                 next_x_vals, next_y_vals);
+                                  sensor_fusion, lane, state, changeLaneCounter);
 
           
+          // Define the actual (x,y) points we will use for the planner
+          vector<double> next_x_vals;
+          vector<double> next_y_vals;
           // call to TRAJECTORY GENERATION, right now to generate trajectory to follow highway waypoints
-          // or to change tranjectory to change lane if lane variable is changed via earlier function
-          // bp_transition_function()
           // std::cout << "call trajectory_generation("<<lane<<")"<<std::endl;
           trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
                                previous_path_x, previous_path_y,
