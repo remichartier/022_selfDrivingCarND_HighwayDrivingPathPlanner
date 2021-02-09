@@ -28,6 +28,8 @@
  *        Add call to trajectory generation bp_generate_trajectories()
  *        Call prediction_get()
  *        Add bp_compute_cost_states()
+ *        Add predictions + car_s_predict as input parameter to bp_compute_cost_states()
+ *        Add calls to cost_collided_rear_car() + cost_collision_car_head(), cost_car_buffer()
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -160,7 +162,7 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
 
         bp_compute_cost_states(car_s, sensor_fusion,possible_steer,lane,
                             index_car_ahead_currentLane, index_car_behind_currentLane,
-                            ref_vel, cost_steer); // output is 'cost_steer' vector
+                            ref_vel, cost_steer, predictions, car_s_predict); // output is 'cost_steer' vector
         
         
         //cout << "call bp_lane_decider()" << endl;
@@ -202,7 +204,8 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
                             vector<fsm_state> possible_steer, int lane,
                             int index_car_ahead_currentLane,
                             int index_car_behind_currentLane,
-                            double ref_vel, vector<double> &cost_steer)
+                            double ref_vel, vector<double> &cost_steer,
+                            vector<double> predictions, double car_s_predict)
 /* 
  * Inputs : 
  *			- double car_s, 
@@ -219,7 +222,7 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
 {
   for (int i=0; i < possible_steer.size(); i++)
   {
-    double cost(0.0),cost1,cost2,cost3,cost4;
+    double cost(0.0),cost1,cost2(0.0),cost3,cost4;
     int index_car_ahead;
     int index_car_behind;
 
@@ -238,11 +241,36 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
       index_car_behind = index_car_behind_currentLane;
     }
 
-    // colliding car head ? : similar to distance car ahead ---> skip this one
+    // Colliding car ahead ?
+    // Compare car_s_predict with index_car_ahead s prediction, if <= car_s_predict
+    // return 1, otherwise 0
+    cost1 = cost_colliding_car_ahead(index_car_ahead, predictions, car_s_predict);
+    
+    // Collided by rear car ?
+    // Compare car_s_predict with index_car_behind s prediction, if >= car_s_predict
+    // return 1, otherwise 0
+    // Note : only if not KeepLane
+    if(possible_steer[i] != KeepLane)
+    {
+      cost2 = cost_collided_rear_car(index_car_behind, predictions, car_s_predict);
+    }
+
+    // Cost buffer car ahead of SAFE_DISTANCE_M
+    // want cost function return : 1 if dist < dist_min,--> dist_min/dist
+    // ie with be 1 if < dist_min, and decrease propertionnaly if > dist_min ...
+    cost3 = cost_car_buffer(car_s_predict, predictions, SAFE_DISTANCE_M,
+                              index_car_ahead);
+    
+    // Cost buffer car behind of SAFE_DISTANCE_M
+    // want cost function return : 1 if dist < dist_min,--> dist_min/dist
+    // ie with be 1 if < dist_min, and decrease proportionnaly if > dist_min ...
+    cost4 = cost_car_buffer(car_s_predict, predictions, SAFE_DISTANCE_M,
+                              index_car_behind);
+#if 0
 
     // Distance car ahead,
     // want cost function return : 1 if dist < dist_min,--> dist_min/dist
-    // ie with be 1 if < dist_min, and decreast propertionnaly if > dist_min ...
+    // ie with be 1 if < dist_min, and decrease propertionnaly if > dist_min ...
     cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
                               index_car_ahead);
 
@@ -279,9 +307,12 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     {
       cost4 = 0;
     }
+    cost = cost1 + cost2 + cost3 + cost4;
+    
+#endif // 0
 
     cost = cost1 + cost2 + cost3 + cost4;
-
+    
     std::cout << "Steering = " << possible_steer[i] << ", " ;
     std::cout << "costs = " << cost1 << ", " ;
     std::cout <<  cost2 << ", " ;

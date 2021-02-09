@@ -16,6 +16,7 @@
  * v003 : Generate trajectories for each prediction (KeepLane, LaneChangeLeft, LaneChangeRight
  *        Add int bp_next_lane()
  *        bp_compute_cost_states()
+ *        Add predictions + car_s_predict as input parameter to bp_compute_cost_states()
  */
 
 #ifndef BEHAVIOR_PLANNER_H
@@ -43,7 +44,8 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
                             vector<fsm_state> possible_steer, int lane,
                             int index_car_ahead_currentLane,
                             int index_car_behind_currentLane,
-                            double ref_vel, vector<double> &cost_steer);
+                            double ref_vel, vector<double> &cost_steer,
+                            vector<double> predictions, double car_s_predict);
 
 void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
                            int index_car_ahead, int dist_min, double &ref_vel,

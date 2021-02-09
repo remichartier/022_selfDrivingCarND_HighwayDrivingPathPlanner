@@ -1,6 +1,7 @@
 /* prediction.cpp to manage prediction of sensor_fusion data
  * History :
  * v001 : first version with fsm_transition_function()
+ *        Change prediction from 30.0 meters to SAFE_DISTANCE_M
  */
 
 #include <iostream> // for cout, endl
@@ -43,7 +44,7 @@ void predictions_get(double car_s, double ref_vel,
     exit(EXIT_FAILURE);
   }
   
-  double t_hour = 30.0 * METER2MILE / ref_vel;
+  double t_hour = SAFE_DISTANCE_M * METER2MILE / ref_vel;
   double t_seconds = t_hour * 60 * 60;
 
   // Now take car about our car prediction
