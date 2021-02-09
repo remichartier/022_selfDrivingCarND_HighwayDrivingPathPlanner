@@ -30,6 +30,7 @@
  *        Add bp_compute_cost_states()
  *        Add predictions + car_s_predict as input parameter to bp_compute_cost_states()
  *        Add calls to cost_collided_rear_car() + cost_collision_car_head(), cost_car_buffer()
+ *        Adjust costs to avoid collisions
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -222,7 +223,7 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
 {
   for (int i=0; i < possible_steer.size(); i++)
   {
-    double cost(0.0),cost1,cost2(0.0),cost3,cost4;
+    double cost(0.0),cost1,cost2(0.0),cost3,cost4(0.0),cost5,cost6,cost7(0);
     int index_car_ahead;
     int index_car_behind;
 
@@ -264,16 +265,38 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     // Cost buffer car behind of SAFE_DISTANCE_M
     // want cost function return : 1 if dist < dist_min,--> dist_min/dist
     // ie with be 1 if < dist_min, and decrease proportionnaly if > dist_min ...
-    cost4 = cost_car_buffer(car_s_predict, predictions, SAFE_DISTANCE_M,
+    // Only count if not KeepLane for rear car ...
+    if(possible_steer[i] != KeepLane)
+    {
+      cost4 = cost_car_buffer(car_s_predict, predictions, SAFE_DISTANCE_M,
                               index_car_behind);
-#if 0
+    }
+    
+    // Speed car ahead, 
+    // Compare our car ref_vel with next car ahead speed,
+    // ref_vel - speed_car_ahead / MAX_SPEED_MPH
+    cost5 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);   
+    
+
 
     // Distance car ahead,
     // want cost function return : 1 if dist < dist_min,--> dist_min/dist
     // ie with be 1 if < dist_min, and decrease propertionnaly if > dist_min ...
-    cost1 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
+    cost6 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
                               index_car_ahead);
+    
+    // Distance car behind ?
+    // similar function as for 'Distance car ahead'
+    // but if KeepLane, car distance behind shoul not count --> -1 ?
 
+    if(possible_steer[i]!=KeepLane)
+    {
+      // NOTE : use SAFE_DISTANCE_BEHIND_M instead of SAFE_DISTANCE_M
+      cost7 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
+                                index_car_behind);
+    } 
+
+#if 0
     // Speed car ahead, 
     // Compare our car ref_vel with next car ahead speed,
     // ref_vel - speed_car_ahead / MAX_SPEED_MPH
@@ -311,13 +334,16 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     
 #endif // 0
 
-    cost = cost1 + cost2 + cost3 + cost4;
+    cost = cost1 + cost2 + cost3 + cost4 + cost5 + cost6 + cost7;
     
     std::cout << "Steering = " << possible_steer[i] << ", " ;
     std::cout << "costs = " << cost1 << ", " ;
     std::cout <<  cost2 << ", " ;
     std::cout <<  cost3 << ", " ;
     std::cout <<  cost4 << ", " ;
+    std::cout <<  cost5 << ", " ;
+    std::cout <<  cost6 << ", " ;
+    std::cout <<  cost7 << ", " ;
     std::cout << "total = " << cost << ", " ;
     std::cout <<  std::endl ;
 
@@ -351,10 +377,11 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
 {  
   too_close = false;
   //cout << "too_close = false;" << endl;
+  double car_ahead_s;
 
   if(index_car_ahead != NONE)
   {
-    double car_ahead_s = sensor_fusion[index_car_ahead][5];
+    car_ahead_s = sensor_fusion[index_car_ahead][5];
     //cout << "double car_ahead_s = sensor_fusion[index_car_ahead][5]; =" << index_car_ahead <<","<<sensor_fusion[index_car_ahead][5]<<  endl;
 
     //std::cout << "bp_adjustAcceleration() : car_ahead_s = " << car_ahead_s ;
@@ -376,7 +403,7 @@ void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
     {
       ref_vel = 0;
     }
-    std::cout << ", speed DOWN, ref_vel = " << ref_vel << std::endl ;
+    std::cout << ", speed DOWN (" << (car_ahead_s - car_s) << " meters, ref_vel = " << ref_vel << std::endl ;
   
   } else if(ref_vel < MAX_SPEED_MPH)
   {

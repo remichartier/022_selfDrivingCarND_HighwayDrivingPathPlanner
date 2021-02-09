@@ -45,7 +45,7 @@ double cost_colliding_car_ahead(int next_car_index, vector<double> predictions,
   double s = predictions[next_car_index];
   // here s contains the coordinate of the next car ahead of car_s in the same lane
   double dist = s - car_s_predict;
-  cout << "distance car ahead = " << dist << " meters; ";
+  cout << "collision ahead = " << dist << " meters; ";
   if(dist <= 0)
   {
     return 1;  
@@ -148,13 +148,11 @@ double cost_car_distance(double car_s, vector<vector<double>> sensor_fusion,
   
   double s = sensor_fusion[next_car_index][5];;
   // here s contains the coordinate of the next car ahead of car_s in the same lane
-  double dist = s - car_s;
+  double dist = fabs(s - car_s);
   cout << "distance = " << dist << " meters; ";
   if(dist == 0)
   {
-    std::cout << "cost_car_distance_ahead() ERROR : dist = 0 can not divide by 0" << std::endl;
-    std::cout << "This causes program TERMINATION - exit(EXIT_FAILURE)" << std::endl;
-    exit(EXIT_FAILURE);
+    return 1;
   }
 
   return(dist_min / dist);
@@ -179,7 +177,7 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
   if(next_car_index == NONE) 
   {
     cout << "speed_ahead = " << "no cars; " ;
-    return -1;
+    return 0;
   }
   // retrieve next car speed
   double speed_ahead = sf_get_speed_milesph(sensor_fusion, next_car_index);
