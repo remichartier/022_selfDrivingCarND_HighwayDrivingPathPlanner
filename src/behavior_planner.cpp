@@ -33,6 +33,8 @@
  *        Adjust costs to avoid collisions
  *        For front / rear car searches, consider also cars starting to change lanes ie 1 meter
  *        away from lane borders --> ( d < (2+(4*lane)+2 +1) && d > (2+(4*lane)-2 -1) )
+ * TAGGED v1.0 on Github
+ *        Test : Enable Lane change anytime Cost computation judge necessary
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -115,7 +117,9 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       
     case KeepLane :
       //std::cout << "FSM KeepLane, need_change_lane = " << need_change_lane << std::endl;
-      if(need_change_lane)
+      //if(need_change_lane)
+      // Could enable change anytime Cost computation judge necessary
+      if(true)
       {
         // check what is possible ? Straight, Left, Right ?
         //std::cout << "Call bp_possible_steer()" << need_change_lane << std::endl;
