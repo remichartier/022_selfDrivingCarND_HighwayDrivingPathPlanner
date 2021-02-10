@@ -31,6 +31,8 @@
  *        Add predictions + car_s_predict as input parameter to bp_compute_cost_states()
  *        Add calls to cost_collided_rear_car() + cost_collision_car_head(), cost_car_buffer()
  *        Adjust costs to avoid collisions
+ *        For front / rear car searches, consider also cars starting to change lanes ie 1 meter
+ *        away from lane borders --> ( d < (2+(4*lane)+2 +1) && d > (2+(4*lane)-2 -1) )
  */
 
 // IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
@@ -278,7 +280,7 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     cost5 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);   
     
 
-
+#if 0
     // Distance car ahead,
     // want cost function return : 1 if dist < dist_min,--> dist_min/dist
     // ie with be 1 if < dist_min, and decrease propertionnaly if > dist_min ...
@@ -295,7 +297,8 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
       cost7 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
                                 index_car_behind);
     } 
-
+#endif // 0
+    
 #if 0
     // Speed car ahead, 
     // Compare our car ref_vel with next car ahead speed,
@@ -334,7 +337,8 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     
 #endif // 0
 
-    cost = cost1 + cost2 + cost3 + cost4 + cost5 + cost6 + cost7;
+    //cost = cost1 + cost2 + cost3 + cost4 + cost5 + cost6 + cost7;
+    cost = cost1 + cost2 + cost3 + cost4 + cost5;
     
     std::cout << "Steering = " << possible_steer[i] << ", " ;
     std::cout << "costs = " << cost1 << ", " ;
@@ -342,8 +346,8 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     std::cout <<  cost3 << ", " ;
     std::cout <<  cost4 << ", " ;
     std::cout <<  cost5 << ", " ;
-    std::cout <<  cost6 << ", " ;
-    std::cout <<  cost7 << ", " ;
+    //std::cout <<  cost6 << ", " ;
+    //std::cout <<  cost7 << ", " ;
     std::cout << "total = " << cost << ", " ;
     std::cout <<  std::endl ;
 
@@ -553,7 +557,11 @@ int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion,
   {
     // car is in my lane
     float d = sensor_fusion[i][6];
-    if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+    // if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+    // to also consider cars starting to change line and cutting 
+    // our cars path, consider if next car / rear car 1meter away from 
+    // lane borders
+    if( d < (2+(4*lane)+2 +1) && d > (2+(4*lane)-2 -1) )
     {
       double check_car_s = sensor_fusion[i][5];      
       
