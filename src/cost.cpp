@@ -45,7 +45,7 @@ double cost_colliding_car_ahead(int next_car_index, vector<double> predictions,
   double s = predictions[next_car_index];
   // here s contains the coordinate of the next car ahead of car_s in the same lane
   double dist = s - car_s_predict;
-  cout << "collision ahead = " << dist << " meters; ";
+  cout << "collision ahead = nextCarPredict - car_s_predict = " << s << " - " << car_s_predict << " = " << dist << " meters; ";
   if(dist <= 0)
   {
     return 1;  

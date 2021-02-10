@@ -38,7 +38,7 @@ void predictions_get(double car_s, double ref_vel,
   // Then, knowing the indexes of closest next and behind cars, will know their predictions
   // after t duration, and can then calculate the costs.
   
-  // cout << "Enter predictions_get()" << endl;
+  //cout << "Enter predictions_get()" << endl;
   
   if(ref_vel == 0)
   {
@@ -58,9 +58,9 @@ void predictions_get(double car_s, double ref_vel,
   //cout << "t_seconds =" << t_seconds << " for 30 m; "; 
   
   // Now take car about our car prediction
-  car_s_predict = car_s + (ref_vel * t_hour); // Note : ref_vel is in miles per hour !!!
+  car_s_predict = car_s + (ref_vel * t_hour / METERPERSECOND2MPH); // Note : car_s is in meters, ref_vel is in miles per hour !!!
   // Now need to convert from miles to meters
-  car_s_predict = car_s_predict / METER2MILE ;
+  //car_s_predict = car_s_predict / METER2MILE ;
   
   // Now take care about our sensor_fusion predictions
   // sensor_fusion data is in meters and seconds !!!
