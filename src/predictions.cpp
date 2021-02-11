@@ -3,6 +3,10 @@
  * v001 : first version with fsm_transition_function()
  *        Change prediction from 30.0 meters to SAFE_DISTANCE_M
  *        Correct car_s_predict
+ * TAGGED v1.0 on Github : Working version, Change Lane if too close to car ahead
+ *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code 
  */
 
 #include <iostream> // for cout, endl

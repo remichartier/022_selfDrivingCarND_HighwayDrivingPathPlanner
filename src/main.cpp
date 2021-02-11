@@ -30,6 +30,10 @@
  * v015 : move increase/decrease speed to fsm module, MAX_ACCEL, MAX_SPEED_MPH too
  * v016 : switch to behavior_planner.cpp and .h
  *        add debut prints, then comment them. Add changeLaneCounter.
+ * TAGGED v1.0 on Github
+ *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code  
  */
 
 #include <uWS/uWS.h>

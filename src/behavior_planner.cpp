@@ -35,15 +35,13 @@
  *        away from lane borders --> ( d < (2+(4*lane)+2 +1) && d > (2+(4*lane)-2 -1) )
  * TAGGED v1.0 on Github
  *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code
  */
-
-// IF KEEP LANE, ON S'EN FOUT DE LA VOITURE DE DERRIERE !!!! --> DO NOT COUNT COST FOR CAR BEHIND
-//  WHEN CHOICE FOR KEEP LANE .... REPLACE THIS COST BY -1.
-  
-// PROBLEM AFTER CHANGING LANE TO FIND OUT ... MAY BE USED ANOTHER VARIABLE THAN STATE ????
   
   
 #include <iostream> // for cout, endl
+#include <math.h> // for fabs()
 #include "behavior_planner.h"
 #include "cost.h"
 #include "trajectory.h"
@@ -283,64 +281,7 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     // ref_vel - speed_car_ahead / MAX_SPEED_MPH
     cost5 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);   
     
-
-#if 0
-    // Distance car ahead,
-    // want cost function return : 1 if dist < dist_min,--> dist_min/dist
-    // ie with be 1 if < dist_min, and decrease propertionnaly if > dist_min ...
-    cost6 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_M,
-                              index_car_ahead);
     
-    // Distance car behind ?
-    // similar function as for 'Distance car ahead'
-    // but if KeepLane, car distance behind shoul not count --> -1 ?
-
-    if(possible_steer[i]!=KeepLane)
-    {
-      // NOTE : use SAFE_DISTANCE_BEHIND_M instead of SAFE_DISTANCE_M
-      cost7 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
-                                index_car_behind);
-    } 
-#endif // 0
-    
-#if 0
-    // Speed car ahead, 
-    // Compare our car ref_vel with next car ahead speed,
-    // ref_vel - speed_car_ahead / MAX_SPEED_MPH
-    cost2 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);        
-
-    // Acceleration car ahead ?
-    // no straight forward info from sensor_fusion on acceleration
-    // would need to develop prediction module
-    // --> skip for time being
-
-    // Distance car behind ?
-    // similar function as for 'Distance car ahead'
-    // but if KeepLane, car distance behind shoul not count --> -1 ?
-
-    if(possible_steer[i]!=KeepLane)
-    {
-      // NOTE : use SAFE_DISTANCE_BEHIND_M instead of SAFE_DISTANCE_M
-      cost3 = cost_car_distance(car_s, sensor_fusion, SAFE_DISTANCE_BEHIND_M,
-                                index_car_behind);
-    } else
-    {
-      cost3 = 0;
-    }
-
-    // risk car ahead doing same move as our car
-    if (possible_steer[i]!=KeepLane)
-    {
-      cost4 = cost_car_cutting_lane_ahead(sensor_fusion, lane, possible_steer[i], index_car_ahead);
-    }
-    else
-    {
-      cost4 = 0;
-    }
-    cost = cost1 + cost2 + cost3 + cost4;
-    
-#endif // 0
-
     //cost = cost1 + cost2 + cost3 + cost4 + cost5 + cost6 + cost7;
     cost = cost1 + cost2 + cost3 + cost4 + cost5;
     
@@ -496,44 +437,6 @@ void bp_generate_trajectories(vector<vector<double>> &trajectories_x,
 
 
 
-int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion, 
-                               int lane)
-  /* 
- * Inputs : 
- *			- double car_s
- *			- <vector<vector<double>> sensor_fusion
- *			- int lane
- * Return : 
- *			- int next_car_index, reused for future cost functions to avoid doing 
- *				the same search again (if no car ahead --> NONE(-1))
- */
-{
-  double sdiff = COST_DIST_MAX;
-  int next_car_index = NONE ;
-  // need to find closest car ahead in the same lane !
-
-  for(int i=0; i < sensor_fusion.size(); i++)
-  {
-    // car is in my lane
-    float d = sensor_fusion[i][6];
-    if( d < (2+4*lane+2) && d > (2+4*lane-2) )
-    {
-      double check_car_s = sensor_fusion[i][5];      
-      
-        if(check_car_s >= car_s)		// if car ahead in the same lane
-        {
-          // if this car closer than previous sdiff --> sdiff          
-          if ((check_car_s - car_s) < sdiff)
-          {
-            sdiff = (check_car_s - car_s);
-            next_car_index = i;
-          } // end if < sdiff
-        } // end if car ahead 
-    } // end if car ahead in same lane
-  } // end for each car  
-  return next_car_index;
-} // end function
-
 int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion, 
                         int lane, int &index_closest_behind,
                         int &index_closest_ahead)
@@ -651,68 +554,6 @@ void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer
 } // end function
 
 
-bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s, 
-                            vector<vector<double>> sensor_fusion, int lane, int dist_min)
-/* 
- * Inputs : 
- *			- int prev_size
- *			- double car_s
- *			- double end_path_s
- *			- <vector<vector<double>> sensor_fusion
- *			- int lane by reference
- *			- int dist_min (distance to check), if>0 : ahead, if<0,behind 
- * Return : 
- *			- bool True or False
- */
-{
-  if(prev_size > 0){
-    car_s = end_path_s;
-  }
-
-  // find ref_v to use
-  for(int i=0; i < sensor_fusion.size(); i++)
-  {
-    // car is in my lane
-    float d = sensor_fusion[i][6];
-    if( d < (2+4*lane+2) && d > (2+4*lane-2) )
-    {
-      double vx = sensor_fusion[i][3];
-      double vy = sensor_fusion[i][4];
-      double check_speed = sqrt(vx*vx + vy*vy);
-      double check_car_s = sensor_fusion[i][5];
-
-      check_car_s+=((double)prev_size*0.02*check_speed);//if using previous points can project s value outwards in time
-      // check s values greater than mine and s gap
-      if(dist_min >= 0)
-      {
-        if((check_car_s > car_s) && ((check_car_s - car_s) < dist_min))
-        {
-          // do some logic here, lower reference velocity, so we don't crash into the car in front of us, could
-          // also flag to try to change lanes
-          // ref_vel = 29.5; //mph
-          // too_close = true;
-          return true;
-
-        } // end if car ahead and less than 30m ahead.
-      }
-      else
-      {
-		// case(dist_min < 0):
-        if((check_car_s < car_s) && ((check_car_s - car_s) < dist_min))
-        {
-          // do some logic here, lower reference velocity, so we don't crash into the car in front of us, could
-          // also flag to try to change lanes
-          // ref_vel = 29.5; //mph
-          // too_close = true;
-          return true;
-        } // end if car ahead and less than 30m ahead.
-      } // end if dist_min...
-    } // end if car ahead in same lane
-  } // end for each car id in sensor_fusion data
-  // if reached that line without returning true before --> return false
-  return false;
-}
-
 void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
 {
 /* 
@@ -733,57 +574,3 @@ void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
   if(lane < LANE_MAX) possible_steer.push_back(LaneChangeRight); 
 } // End function
 
-
-
-void bp_next_lanes_possible(vector<fsm_state> &possible_next_move, bool &too_close,
-                            int prev_size, double car_s, double end_path_s, 
-                            vector<vector<double>> sensor_fusion, int lane)
-/* 
- * Inputs : 
- *			- vector<fsm_state> &possible_next_move, by reference
- *			- bool &too_close, by reference
- *			- int prev_size
- *			- double car_s
- *			- double end_path_s
- *			- <vector<vector<double>> sensor_fusion
- *			- int lane 
- * Return : 
- *			- vector<fsm_state> possible_next_move
- *			- bool too_close
- */
-{
-  too_close = bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
-                                      sensor_fusion, lane, SAFE_DISTANCE_M);
-  
-  // if no car too close ahead, can keep on same lane
-  if(!too_close) possible_next_move.push_back(KeepLane);
-  
-  // consider if lane -1 possible
-  if(lane > LANE_MIN)
-  {
-    // Left could be possible but need to check if no cars on the Left (lane -1)
-    // both at + 30m and - 30m.... SAFE_DISTANCE_M
-    bool too_close_left;
-    too_close_left = bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
-                                      sensor_fusion, lane-1, SAFE_DISTANCE_M);
-    // need to check as well if no car on lane-1 behind at SAFE_DISTANCE_M
-    too_close_left |= bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
-                                      sensor_fusion, lane-1, -SAFE_DISTANCE_M);
-    
-    if(!too_close_left) possible_next_move.push_back(LaneChangeLeft);  
-  }
-  
-  // consider if lane +1 possible
-  if(lane < LANE_MAX)
-  {
-    // Right could be possible but need to check if no cars on the Right (lane +1)
-    bool too_close_right;
-    too_close_right = bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
-                                      sensor_fusion, lane+1, SAFE_DISTANCE_M);
-    // need to check as well if no car on lane-1 behind at SAFE_DISTANCE_M
-    too_close_right |= bp_isCarInLaneTooClose(prev_size, car_s, end_path_s,
-                                      sensor_fusion, lane+1, -SAFE_DISTANCE_M);
-    
-    if(!too_close_right) possible_next_move.push_back(LaneChangeRight); 
-  }
-} // end bp_next_lanes_possible()

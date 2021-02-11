@@ -2,12 +2,14 @@
  * History :
  * v000 : first version with trajectoryGeneration() function
  * v001 : add fsm_state input/output to fsm_transition_function()
- *       
+ * TAGGED v1.0 on Github : Working version, Change Lane if too close to car ahead
+ *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code       
  */
 #ifndef TRAJECTORY_H
 #define TRAJECTORY_H
 
-#include <math.h> // for cos/sin/atan2 functions
 #include <vector>
 using std::vector;
 
