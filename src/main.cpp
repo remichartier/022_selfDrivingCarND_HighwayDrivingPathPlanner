@@ -33,7 +33,8 @@
  * TAGGED v1.0 on Github
  *        Test : Enable Lane change anytime Cost computation judge necessary
  * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
- *        Cleanup of code  
+ *        Cleanup of code
+ *        Cleanup comments
  */
 
 #include <uWS/uWS.h>
@@ -98,19 +99,20 @@ int main() {
     map_waypoints_dy.push_back(d_y);
   }
   
-  // drive car in middle lane following track
+  // Start car in middle lane with velocity = 0 mph
   int lane = 1;
   double ref_vel = 0.0; // 49.5;
   
-  // initialise FSM state at the begining
+  // initialise FSM state at the begining to 'KeepLane'
   fsm_state state = KeepLane;
   
   // changeLaneCounter to study logs for specific changes
+  // For debug purposes
   int changeLaneCounter = 0;
   
   /*
    * Note the change ...
-   * From original : 
+   * From original : added &ref_vel, &lane,&state,&changeLaneCounter
   h.onMessage([&map_waypoints_x,&map_waypoints_y,&map_waypoints_s,
                &map_waypoints_dx,&map_waypoints_dy]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
@@ -120,8 +122,6 @@ int main() {
                &map_waypoints_dx,&map_waypoints_dy,&lane,&state,&changeLaneCounter]
               (uWS::WebSocket<uWS::SERVER> ws, char *data, size_t length,
                uWS::OpCode opCode) {
-
-    //cout << "Enter h.onMessage()" << endl;
 
                 // "42" at the start of the message means there's a websocket message event.
     // The 4 signifies a websocket message
@@ -164,7 +164,6 @@ int main() {
            *   sequentially every .02 seconds
            */
           
-
           /**
           * Test code for car to follow track like in Q&A
           * with spline to smoothen trajectory
@@ -181,12 +180,9 @@ int main() {
           
           // drive car in middle lane following track
           
-          // bool too_close; // to trigger increase/decrease acceleration
-          
           // Define the actual (x,y) points we will use for the planner
           vector<double> next_x_vals;
           vector<double> next_y_vals;
-          // Pass those to bp_transition_function() to return the chosen trajectory as an output
           
           // Using Sensor Fusion data to avoid hitting cars
           // Call to FSM TRANSITION FUNCTION to decide KeepLane or ChangeLane Left or Right
