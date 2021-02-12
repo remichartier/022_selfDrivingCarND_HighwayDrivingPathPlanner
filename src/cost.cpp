@@ -12,6 +12,7 @@
  *        Test : Enable Lane change anytime Cost computation judge necessary
  * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
  *        Cleanup of code 
+ *        Clean comments
  */
 
 #include <iostream> // for cout, endl
@@ -74,7 +75,7 @@ double cost_collided_rear_car(int index_car_behind, vector<double> predictions,
 {
   if(index_car_behind == NONE)
   {
-    cout << "collision rear = " << " no cars; ";
+    // cout << "collision rear = " << " no cars; ";
     return 0;
   }
   // if car ahead exists on same lane :
@@ -82,7 +83,7 @@ double cost_collided_rear_car(int index_car_behind, vector<double> predictions,
   double s = predictions[index_car_behind];
   // here s contains the s prediction coordinate of the rear car behind car_s in the same lane
   double dist = car_s_predict - s;
-  cout << "collision rear = " << dist << " meters; ";
+  // cout << "collision rear = " << dist << " meters; ";
   if(dist <= 0)
   {
     return 1;  
@@ -108,7 +109,7 @@ double cost_car_buffer(double car_s_predict, vector<double> predictions, double 
 {
   if(index_car == NONE)
   {
-    cout << "buffer = " << " no cars; ";
+    // cout << "buffer = " << " no cars; ";
     return 0;
   }
   // if car ahead exists on same lane :
@@ -116,7 +117,7 @@ double cost_car_buffer(double car_s_predict, vector<double> predictions, double 
   double s = predictions[index_car];
   // here s contains the coordinate of the next car ahead of car_s in the same lane
   double dist = fabs(s - car_s_predict);
-  cout << "buffer = " << dist << " meters; ";
+  // cout << "buffer = " << dist << " meters; ";
   if(dist == 0)
   {
     return 1;
@@ -142,7 +143,7 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
 {
   if(next_car_index == NONE) 
   {
-    cout << "speed_ahead = " << "no cars; " ;
+    // cout << "speed_ahead = " << "no cars; " ;
     return 0;
   }
   // retrieve next car speed

@@ -7,6 +7,7 @@
  *        Test : Enable Lane change anytime Cost computation judge necessary
  * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
  *        Cleanup of code 
+ *        Cleanup comments
  */
 
 #include <iostream> // for cout, endl
@@ -64,7 +65,6 @@ void predictions_get(double car_s, double ref_vel,
   // Now take car about our car prediction
   car_s_predict = car_s + (ref_vel * t_hour / METERPERSECOND2MPH); // Note : car_s is in meters, ref_vel is in miles per hour !!!
   // Now need to convert from miles to meters
-  //car_s_predict = car_s_predict / METER2MILE ;
   
   // Now take care about our sensor_fusion predictions
   // sensor_fusion data is in meters and seconds !!!
