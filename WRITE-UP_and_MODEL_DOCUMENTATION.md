@@ -98,7 +98,6 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
           // or Trajectory chosen by Behavior Planner and generated via Trajectory Generation function
           
           int prev_size = previous_path_x.size();
-          //(b<a)?b:a;
           prev_size = (REUSE_PREVIOUS_PATH_SIZE<prev_size) ? REUSE_PREVIOUS_PATH_SIZE : prev_size;
 ...
           trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
@@ -115,7 +114,14 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Car does not have collisions|The car must not come into contact with any of the other cars on the road|
+|Car does not have collisions| Compliance with this requirement was done in several parts of the code. One piece of implementation is by analysing for each execution of h.onMessage(), the code analyses from sensor_fusion data (done via function bp_indexClosestCars()) if any vehicle ahead of our own car is at a distance less than 50m. It if is the case, it will decrease incrementally the speed (code of function bp_adjustAcceleration() already showed in above criteria. Another part of implementation is done via a cost function, used when analysing candidate trajectories, to reward trajectories which buffer distances higher than 50 meters with the next car of the lane considered, and penalize the trajectories with lower buffer distances below 50 m with the next car ahead in the same lane.
+Another features I had to implement in order to prevent collisions was also to consider any cars predicted in different lanes compared to our own car, but starting to deviate from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory. And therefore I selected car predictions from sensor_fusion data, which where approaching too much the lane borders form the candidate lane, withing 1 meter of the border lane. Below pieces of code are giving examples of those implementations to avoid collisions :|
+```
+```
+
+
+| Criteria Valid Trajectories| Meets Specifications |
+|-----------|----------------|
 |car stays in its lane, except for the time between changing lanes|The car doesn't spend more than a 3 second length out side the lane lanes during changing lanes, and every other time the car stays inside one of the 3 lanes on the right hand side of the road|
 |car is able to change lanes|The car is able to smoothly change lanes when it makes sense to do so, such as when behind a slower moving car and an adjacent lane is clear of other traffic|
 
