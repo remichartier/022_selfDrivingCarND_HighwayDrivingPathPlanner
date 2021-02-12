@@ -1,9 +1,9 @@
-Write-up including : 
+This Write-up includes : 
 - The rubric points.
   - Brief description of how I addressed each point and references to the relevant code.
-- Detailed description of the code used in each step (with line-number references and code snippets where appropriate) 
-- Links to other supporting documents or external references.
-- Explain how the code works and why I wrote it that way.
+  - ie including detailed description of the code used in each step (mainly via code snippets where appropriate) 
+  - Links to other supporting documents or external references.
+- Model Description : explaining the code model for generating paths, how the code works and why I wrote it that way.
 
 # Project Rubric Criteria
 
@@ -114,8 +114,184 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Car does not have collisions| Compliance with this requirement was done in several parts of the code. One piece of implementation is by analysing for each execution of h.onMessage(), the code analyses from sensor_fusion data (done via function bp_indexClosestCars()) if any vehicle ahead of our own car is at a distance less than 50m. It if is the case, it will decrease incrementally the speed (code of function bp_adjustAcceleration() already showed in above criteria. Another part of implementation is done via a cost function, used when analysing candidate trajectories, to reward trajectories whith buffer distances higher than 50 meters from the next car of the lane considered, and penalize the trajectories with lower buffer distances below 50 m with the next car ahead in the same lane. Another feature I had to implement in order to prevent collisions was also to consider any cars predicted in different lanes compared to our own car, but starting to deviate from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory. And therefore I selected car predictions from sensor_fusion data, which where approaching too much the lane borders from the candidate lane, withing 1 meter of the border lane. This allowed to penalize trajectories for which the risk of an adjacent lane car would "cut the road" and cross our car trajector at the very last second. Below pieces of code are giving examples of those implementations to avoid collisions :|
+|Car does not have collisions| Compliance with this requirement was done in several parts of the code. One piece of implementation is by analysing for each execution of h.onMessage(), the code analyses from sensor_fusion data (done via function bp_indexClosestCars()) if any vehicle ahead of our own car is at a distance less than 50m. It if is the case, it will decrease incrementally the speed (code of function bp_adjustAcceleration() already showed in above criteria. Another part of implementation is done via several cost functions, used when analysing candidate trajectories, to reward trajectories whith buffer distances higher than 50 meters from the next car of the lane considered, and penalize the trajectories with lower buffer distances below 50 m with the next car ahead in the same lane. And there is another cost function rewarding or penalizing tranjectories resulting in collisions as well. Another feature I had to implement in order to prevent collisions was also to consider any cars predicted in different lanes compared to our own car, but starting to deviate from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory. And therefore I selected car predictions from sensor_fusion data, which where approaching too much the lane borders from the candidate lane, withing 1 meter of the border lane. This allowed to penalize trajectories for which the risk of an adjacent lane car would "cut the road" and cross our car trajector at the very last second. Another part of implementation is re-using all the solutions to avoid bumping in other cars ahead, for the closest cars behind our car as well. Below pieces of code are giving examples of those implementations to avoid collisions :|
 ```
+// behavior_planner.cpp, function bp_indexClosestCars()
+// ====================================================
+int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion, 
+                        int lane, int &index_closest_behind,
+                        int &index_closest_ahead)
+ /* 
+ * Inputs : 
+ *			- double car_s
+ *			- <vector<vector<double>> sensor_fusion
+ *			- int lane
+ *			- int &index_closest_behind, by reference
+ *			- int &index_closest_ahead, by reference
+ * Return : 
+ *			- int index_closest_ahead, reused for future cost functions to avoid doing 
+ *				the same search again (if no car ahead --> NONE(-1))
+ *			- int index_closest_behind, reused for future cost functions to avoid doing 
+ */
+{
+  double sdiff_behind = COST_DIST_MAX;
+  double sdiff_ahead = COST_DIST_MAX;
+
+  index_closest_behind = NONE;
+  index_closest_ahead = NONE;
+  // need to find closest car AHEAD/BEHIND in the same lane !
+
+  for(int i=0; i < sensor_fusion.size(); i++)
+  {
+    // car is in my lane
+    float d = sensor_fusion[i][6];
+    // if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+    // to also consider cars starting to change line and cutting 
+    // our cars path, consider if next car / rear car 1meter away from 
+    // lane borders
+    if( d < (2+(4*lane)+2 +1) && d > (2+(4*lane)-2 -1) )
+    {
+      double check_car_s = sensor_fusion[i][5];      
+      
+      // 1. Test if closest ahead
+      if(check_car_s >= car_s)		// if car BEHIND or AHEAD in the same lane
+      {
+        // if this car closer than previous sdiff --> sdiff          
+        if((check_car_s - car_s) < sdiff_ahead)
+        {
+          sdiff_ahead = check_car_s - car_s;
+          index_closest_ahead = i;
+        } // end if < sdiff
+      } // end if car ahead 
+      
+      // 2. Test if closest behind
+      if(check_car_s <= car_s)		// if car BEHIND or AHEAD in the same lane
+      {
+        // if this car closer than previous sdiff --> sdiff          
+        if((car_s - check_car_s) < sdiff_behind)
+        {
+          sdiff_ahead = car_s - check_car_s;
+          index_closest_behind = i;
+        } // end if < sdiff
+      } // end if car ahead 
+
+    } // end if car ahead in same lane
+  } // end for each car  
+} // end function
+
+// cost.cpp functions cost_colliding_car_ahead(), cost_collided_rear_car(), and cost_car_buffer()
+=================================================================================================
+// Cost Colliding car ahead
+// if prediction collide --> 1, otherwise --> 0
+double cost_colliding_car_ahead(int next_car_index, vector<double> predictions,
+                               double car_s_predict)
+/* 
+ * Inputs : 
+ *			- int next_car_index, reused to avoid doing the same search again 
+ *				(if no car ahead --> NONE(-1)) across several cost functions
+ *			- vector<double> predictions
+ *			- double car_s_predict
+ * Return : 
+ *			- double cost
+ */
+{
+  if(next_car_index == NONE)
+  {
+    cout << "collision ahead = " << " no cars; ";
+    return 0;
+  }
+  // if car ahead exists on same lane :
+  
+  double s = predictions[next_car_index];
+  // here s contains the coordinate of the next car ahead of car_s in the same lane
+  double dist = s - car_s_predict;
+  // cout << "collision ahead = nextCarPredict - car_s_predict = " << s << " - " << car_s_predict << " = " << dist << " meters; ";
+  cout << "collision ahead = " << dist << " meters; ";
+if(dist <= 0)
+  {
+    return 1;  
+  }
+} // end function
+
+
+// Collided by rear car ?
+// Compare car_s_predict with index_car_behind s prediction, if >= car_s_predict
+// return 1, otherwise 0
+double cost_collided_rear_car(int index_car_behind, vector<double> predictions, 
+                              double car_s_predict)
+/* 
+ * Inputs : 
+ *			- int index_car_behind, reused to avoid doing the same search again 
+ *				(if no car ahead --> NONE(-1)) across several cost functions
+ *			- vector<double> predictions
+ *			- double car_s_predict
+ * Return : 
+ *			- double cost
+ */
+{
+  if(index_car_behind == NONE)
+  {
+    // cout << "collision rear = " << " no cars; ";
+    return 0;
+  }
+  // if car ahead exists on same lane :
+  
+  double s = predictions[index_car_behind];
+  // here s contains the s prediction coordinate of the rear car behind car_s in the same lane
+  double dist = car_s_predict - s;
+  // cout << "collision rear = " << dist << " meters; ";
+  if(dist <= 0)
+  {
+    return 1;  
+  }
+} // end function
+
+
+// Cost buffer car ahead of SAFE_DISTANCE_M
+// want cost function return : 1 if dist < dist_min,--> dist_min/dist
+// ie with be 1 if < dist_min, and decrease propertionnaly if > dist_min ...
+double cost_car_buffer(double car_s_predict, vector<double> predictions, double dist_min,
+                              int index_car)
+/* 
+ * Inputs : 
+ *			- double car_s_predict
+ *			- vector<double> predictions
+ *			- double dist_min (buffer distance)
+ *			- int index_car_ahead, reused to avoid doing the same search again 
+ *				(if no car ahead --> NONE(-1)) across several cost functions
+ * Return : 
+ *			- double cost
+ */
+{
+  if(index_car == NONE)
+  {
+    // cout << "buffer = " << " no cars; ";
+    return 0;
+  }
+  // if car ahead exists on same lane :
+  
+  double s = predictions[index_car];
+  // here s contains the coordinate of the next car ahead of car_s in the same lane
+  double dist = fabs(s - car_s_predict);
+  // cout << "buffer = " << dist << " meters; ";
+  if(dist == 0)
+  {
+    return 1;
+  }
+  return(dist_min / dist);  
+} // end function
+
+// 
+
+// Consider cars ahead starting to deviate from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory
+// in behavior_planner.cpp, function bp_indexClosestCars() 
+// =================================================================================================================================================
+// if( d < (2+4*lane+2) && d > (2+4*lane-2) )
+    // to also consider cars starting to change line and cutting 
+    // our cars path, consider if next car / rear car 1meter away from 
+    // lane borders
+    if( d < (2+(4*lane)+2 +1) && d > (2+(4*lane)-2 -1) )
+
 ```
 
 
