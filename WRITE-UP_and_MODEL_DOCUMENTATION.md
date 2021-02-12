@@ -21,8 +21,10 @@ Write-up including :
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Car able to drive at least 4.32 miles without incident|The top right screen of the simulator shows the current/best miles driven without incident. Incidents include exceeding acceleration/jerk/speed, collision, and driving outside of the lanes. Each incident case is also listed below in more detail|
-|car drives according to the speed limit|The car doesn't drive faster than the speed limit. Also the car isn't driving much slower than speed limit unless obstructed by traffic|
+|Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias|
+|car drives according to the speed limit| The implementation set the maximum speed to 49.5 mph for the car, ensuring the car does not exceed the speed limit of 50 mph. It also ensures to not drive slower than speed limit by always keep accelerating until 49.5 mph unless car becomes too close to any cars ahead in the same lane. This is done thanks to the following pieces of code spread in different files/functions :|
+
+| Criteria Valid Trajectories| Meets Specifications |
 |Max Acceleration and Jerk are not Exceeded|The car does not exceed a total acceleration of 10 m/s^2 and a jerk of 10 m/s^3|
 |Car does not have collisions|The car must not come into contact with any of the other cars on the road|
 |car stays in its lane, except for the time between changing lanes|The car doesn't spend more than a 3 second length out side the lane lanes during changing lanes, and every other time the car stays inside one of the 3 lanes on the right hand side of the road|
