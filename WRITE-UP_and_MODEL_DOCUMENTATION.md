@@ -23,8 +23,37 @@ Write-up including :
 |-----------|----------------|
 |Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias|
 |car drives according to the speed limit| The implementation set the maximum speed to 49.5 mph for the car, ensuring the car does not exceed the speed limit of 50 mph. It also ensures to not drive slower than speed limit by always keep accelerating until 49.5 mph unless car becomes too close to any cars ahead in the same lane. This is done thanks to the following pieces of code spread in different files/functions :|
+```
+// constants.h
+#define MAX_SPEED_MPH 				49.5
+#define MAX_ACCEL 					0.224
+
+// behavior_planner.cpp, function bp_adjustAcceleration()
+//ensures to not drive slower than speed limit
+// and ensuring the car does not exceed the speed limit of 50 mph
+  if(too_close == true){
+    // Adjust acceleration depending of cars ahead
+    // code to adjust incrementally speed changes to avoid crashing into car ahead
+    // in the lane
+    if(ref_vel - MAX_ACCEL >0)
+    {
+      ref_vel -= MAX_ACCEL;
+    } else
+    {
+      ref_vel = 0;
+    }
+    std::cout << ", speed DOWN (" << (car_ahead_s - car_s) << " meters, ref_vel = " << ref_vel << std::endl ;
+  
+  } else if(ref_vel < MAX_SPEED_MPH)
+  {
+    std::cout << ", speed UP, ref_vel = " << ref_vel << std::endl;
+    ref_vel += MAX_ACCEL;
+  }  
+  
+```
 
 | Criteria Valid Trajectories| Meets Specifications |
+|-----------|----------------|
 |Max Acceleration and Jerk are not Exceeded|The car does not exceed a total acceleration of 10 m/s^2 and a jerk of 10 m/s^3|
 |Car does not have collisions|The car must not come into contact with any of the other cars on the road|
 |car stays in its lane, except for the time between changing lanes|The car doesn't spend more than a 3 second length out side the lane lanes during changing lanes, and every other time the car stays inside one of the 3 lanes on the right hand side of the road|
