@@ -12,11 +12,15 @@ This Write-up includes :
 |Code compiles correctly.|Code must compile without errors with cmake and make.|
 
 ```
-./buildremi.sh 
+root@18af971d902a:/home/workspace/CarND-Path-Planning-Project/build# ./buildremi.sh 
 -- Configuring done
 -- Generating done
 -- Build files have been written to: /home/workspace/CarND-Path-Planning-Project/build
+Scanning dependencies of target path_planning
+[ 12%] Building CXX object CMakeFiles/path_planning.dir/src/behavior_planner.cpp.o
+[ 25%] Linking CXX executable path_planning
 [100%] Built target path_planning
+root@18af971d902a:/home/workspace/CarND-Path-Planning-Project/build# 
 ```
 
 | Criteria Valid Trajectories| Meets Specifications |
