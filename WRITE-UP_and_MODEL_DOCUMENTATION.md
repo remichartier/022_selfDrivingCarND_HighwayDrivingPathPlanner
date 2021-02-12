@@ -5,7 +5,7 @@ This Write-up includes :
   - Links to other supporting documents or external references.
 - Model Description : explaining the code model for generating paths, how the code works and why I wrote it that way.
 
-# Project Rubric Criteria
+# Project Rubric points
 
 | Criteria Compilation| Meets Specifications |
 |-----------|----------------|
@@ -348,16 +348,16 @@ void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
 } // End function
 ```
 
-The car doesn't spend more than a 3 second length out side the lane lanes during changing lanes, and every other time the car stays inside one of the 3 lanes on the right hand side of the road
-
-
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|car is able to change lanes|The car is able to smoothly change lanes when it makes sense to do so, such as when behind a slower moving car and an adjacent lane is clear of other traffic|
+|car is able to change lanes||
+The car is able to smoothly change lanes when it makes sense to do so, such as when behind a slower moving car and an adjacent lane is clear of other traffic
 
 | Criteria Reflection| Meets Specifications |
 |-----------|----------------|
-|There is a reflection on how to generate paths|The code model for generating paths is described in detail. This can be part of the README or a separate doc labeled "Model Documentation|
-|||
-|||
-|||
+|There is a reflection on how to generate paths||
+The code model for generating paths is described in detail. This can be part of the README or a separate doc labeled "Model Documentation
+
+# Model Description
+
+Explaining the code model for generating paths, how the code works and why I wrote it that way.
