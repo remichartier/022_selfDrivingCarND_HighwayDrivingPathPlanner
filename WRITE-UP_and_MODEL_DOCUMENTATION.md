@@ -116,6 +116,11 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
 |-----------|----------------|
 |Car does not have collisions| Compliance with this requirement was done in several parts of the code. One piece of implementation is by analysing for each execution of h.onMessage(), the code analyses from sensor_fusion data (done via function bp_indexClosestCars()) if any vehicle ahead of our own car is at a distance less than 50m. It if is the case, it will decrease incrementally the speed (code of function bp_adjustAcceleration() already showed in above criteria. Another part of implementation is done via several cost functions, used when analysing candidate trajectories, to reward trajectories whith buffer distances higher than 50 meters from the next car of the lane considered, and penalize the trajectories with lower buffer distances below 50 m with the next car ahead in the same lane. And there is another cost function rewarding or penalizing tranjectories resulting in collisions as well. Another feature I had to implement in order to prevent collisions was also to consider any cars predicted in different lanes compared to our own car, but starting to deviate from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory. And therefore I selected car predictions from sensor_fusion data, which where approaching too much the lane borders from the candidate lane, withing 1 meter of the border lane. This allowed to penalize trajectories for which the risk of an adjacent lane car would "cut the road" and cross our car trajector at the very last second. Another part of implementation is re-using all the solutions to avoid bumping in other cars ahead, for the closest cars behind our car as well. Below pieces of code are giving examples of those implementations to avoid collisions :|
 ```
+// constants.h
+// ===========
+#define SAFE_DISTANCE_M				50
+#define SAFE_DISTANCE_BEHIND_M		50
+
 // behavior_planner.cpp, function bp_indexClosestCars()
 // ====================================================
 int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion, 
@@ -297,7 +302,57 @@ double cost_car_buffer(double car_s_predict, vector<double> predictions, double 
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|car stays in its lane, except for the time between changing lanes|The car doesn't spend more than a 3 second length out side the lane lanes during changing lanes, and every other time the car stays inside one of the 3 lanes on the right hand side of the road|
+|car stays in its lane, except for the time between changing lanes| I complied to this requirement by using the trajectory generation powered with spline.h and suggested by the project course video, only generating splines for which lanes are switched within a 30 meters distance, and for which the splines align with the middle of the target lane at the end of the first 30 meters of the spline trajectory generation and stays in this middle lane for the next 60 meters after. Also, to keep the car withing the 3 lanes on the right hand side of the road, I restrict the lane numbers to be only between 0 to 2, via LANE_MAX and LANE_MIN constants ie the 3 right hand side lanes of the road, and I apply this restriction when considering other lane trajectories. All those compliances are implemented via the following pieces of code, some of them already partly mentioned in above criterias : |
+```
+// trajectory.cpp / trajectory_generation()
+// ========================================
+// In Frenet add evenly 30m spaced points ahead of the starting reference.
+  // NOTE : GOOD TRAJECTORY FOR FOLLOWING TRACK, BUT NOT FOR TURNING LEFT OR RIGHT ...
+  vector<double> next_wp0 = getXY(car_s + 30, (2+4*lane), map_waypoints_s, map_waypoints_x,map_waypoints_y);
+  vector<double> next_wp1 = getXY(car_s + 60, (2+4*lane), map_waypoints_s, map_waypoints_x,map_waypoints_y);
+  vector<double> next_wp2 = getXY(car_s + 90, (2+4*lane), map_waypoints_s, map_waypoints_x,map_waypoints_y);
+
+  ptsx.push_back(next_wp0[0]);
+  ptsx.push_back(next_wp1[0]);
+  ptsx.push_back(next_wp2[0]);
+
+  ptsy.push_back(next_wp0[1]);
+  ptsy.push_back(next_wp1[1]);
+  ptsy.push_back(next_wp2[1]);
+
+// constants.h
+// ===========
+#define LANE_MAX					2
+#define LANE_MIN					0
+
+// behavior_planner.cpp, function bp_possible_steer()
+// ==================================================
+void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
+{
+/* 
+ * Inputs : 
+ *			- vector<fsm_state> &possible_steer, by reference
+ *			- int lane
+ * Return : 
+ *			- vector<fsm_state> possible_steer
+ */
+  
+  // First possibility is always to KeepLane 
+  possible_steer.push_back(KeepLane);
+  
+  // Next possibility Left ? consider if lane -1 possible
+  if(lane > LANE_MIN) possible_steer.push_back(LaneChangeLeft);  
+  
+  // Next possibility Right ? consider if lane +1 possible
+  if(lane < LANE_MAX) possible_steer.push_back(LaneChangeRight); 
+} // End function
+```
+
+The car doesn't spend more than a 3 second length out side the lane lanes during changing lanes, and every other time the car stays inside one of the 3 lanes on the right hand side of the road
+
+
+| Criteria Valid Trajectories| Meets Specifications |
+|-----------|----------------|
 |car is able to change lanes|The car is able to smoothly change lanes when it makes sense to do so, such as when behind a slower moving car and an adjacent lane is clear of other traffic|
 
 | Criteria Reflection| Meets Specifications |
