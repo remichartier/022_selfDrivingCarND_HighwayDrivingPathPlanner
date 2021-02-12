@@ -355,9 +355,10 @@ The car is able to smoothly change lanes when it makes sense to do so, such as w
 
 | Criteria Reflection| Meets Specifications |
 |-----------|----------------|
-|There is a reflection on how to generate paths||
-The code model for generating paths is described in detail. This can be part of the README or a separate doc labeled "Model Documentation
+|There is a reflection on how to generate paths| cf Model Description chapter below describing the path generation in detail|
 
 # Model Description
 
 Explaining the code model for generating paths, how the code works and why I wrote it that way.
+The code model for generating paths is described in detail. This can be part of the README or a separate doc labeled "Model Documentation
+
