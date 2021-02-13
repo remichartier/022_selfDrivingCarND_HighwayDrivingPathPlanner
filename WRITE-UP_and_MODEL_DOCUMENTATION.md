@@ -354,7 +354,7 @@ And lastly, an important implementation against collisions is to use prediction 
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|car stays in its lane, except for the time between changing lanes| I complied to this requirement by using the trajectory generation powered with spline.h and suggested by the project course video, only generating splines for which lanes are switched within a 30 meters distance, and for which the splines align with the middle of the target lane at the end of the first 30 meters of the spline trajectory generation and stays in this middle lane for the next 60 meters after. : |
+|car stays in its lane, except for the time between changing lanes| I complied to this requirement by using the trajectory generation powered with spline.h and suggested by the project course video, only generating splines for which lanes are switched within a 30 meters distance, and for which the splines align with the middle of the target lane at the end of the first 30 meters of the spline trajectory generation and stays in this middle lane for the next 60 meters after: |
 ```
 // trajectory.cpp / trajectory_generation()
 // ========================================
@@ -407,7 +407,7 @@ void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
 |-----------|----------------|
 |car is able to change lanes| I implemented several strategies to reach that goal. First one was to implement an entire Behavior Planner to decide when to change lanes. Behavior Planner includes an FSM (Finite State Machine) with states KeepLane, LaneChangeLeft, LaneChangeRight. When the car is in a specific lane, it retrieves from Sensor Fusion the index of the car ahead and the car behind. This allows to know the distance to those cars, as well as their speed. cf below implementation : |
 ```
-// In behavior_planner.cpp, functions bp_transition_function(), bp_compute_cost_states() and bp_lane_decider()
+// behavior_planner.cpp / functions bp_transition_function(), bp_compute_cost_states() and bp_lane_decider()
 // ===============================================================================================================
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,double &ref_vel,
                             vector<vector<double>> sensor_fusion, int &lane, fsm_state &state, 
