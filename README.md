@@ -1,4 +1,4 @@
-Note : cf [WRITE-UP.md](WRITE-UP.md) file for the implementation explanations. 
+Note : cf [WRITE-UP_and_MODEL_DOCUMENTATION.md](WRITE-UP_and_MODEL_DOCUMENTATION.md) file for the implementation explanations. 
 
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
