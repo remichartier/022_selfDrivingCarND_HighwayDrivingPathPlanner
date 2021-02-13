@@ -95,7 +95,15 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Max Acceleration and Jerk are not Exceeded| To keep the car not exceeding a total acceleration of 10 m/s^2 and a jerk of 10 m/s^3, I followed the project course video recommendations by only applying positive or negative acceleration or speed increases by MAX_ACCEL (0.224 mph), and by keeping the implementation suggestion for the Trajectory Generation of waypoints spaced by 30 meters, and also by using smooth transitions between current trajectory driving by car, and new trajectory generated, by keeping 5 waypoints from current trajectory before generating a brand new trajectory via function trajectory_generation(), and all this is done via the code mentioned above to adjust speed steps using MAX_ACCEL (0.224 mph) as well as the Trajectory Generation pieces of code mentioned below :|
+|Max Acceleration and Jerk are not Exceeded| To keep the car not exceeding a total acceleration of 10 m/s^2 and a jerk of 10 m/s^3, I followed the project course video recommendations by only applying positive or negative acceleration or speed increases by MAX_ACCEL (0.224 mph), cf bp_adjustAcceleration() shown above, and by keeping the implementation suggestion for the Trajectory Generation of waypoints spaced by 30 meters, cf code below : |
+```
+// trajectory.cpp / trajectory_generation()
+// ========================================
+// In Frenet add evenly 30m spaced points ahead of the starting reference.
+  // NOTE : GOOD TRAJECTORY FOR FOLLOWING TRACK, BUT NOT FOR TURNING LEFT OR RIGHT ...
+  vector<double> next_wp0 = getXY(car_s + 30, (2+4*lane), map_waypoints_s, map_waypoints_x,map_waypoints_y);
+```
+And also by using smooth transitions between current trajectory driving by car, and new trajectory generated, by keeping 5 waypoints from current trajectory before generating a brand new trajectory via function trajectory_generation(), shown below :
 ```
 // main.cpp
 // ========
@@ -107,22 +115,16 @@ double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusio
           
           int prev_size = previous_path_x.size();
           prev_size = (REUSE_PREVIOUS_PATH_SIZE<prev_size) ? REUSE_PREVIOUS_PATH_SIZE : prev_size;
-...
+          
           trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
                                previous_path_x, previous_path_y,
                                map_waypoints_s, map_waypoints_x, map_waypoints_y,
                                lane, ref_vel, next_x_vals, next_y_vals);
-
-// trajectory.cpp / trajectory_generation()
-// ========================================
-// In Frenet add evenly 30m spaced points ahead of the starting reference.
-  // NOTE : GOOD TRAJECTORY FOR FOLLOWING TRACK, BUT NOT FOR TURNING LEFT OR RIGHT ...
-  vector<double> next_wp0 = getXY(car_s + 30, (2+4*lane), map_waypoints_s, map_waypoints_x,map_waypoints_y);
 ```
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Car does not have collisions| Compliance with this requirement was done in several parts of the code. One piece of implementation is by analyzing for each execution of h.onMessage(), the code analyses from sensor_fusion data (done via function bp_indexClosestCars()) if any vehicle ahead of our own car is at a distance less than 50m. It if is the case, it will decrease incrementally the speed (code of function bp_adjustAcceleration() already showed in above criteria. Another part of implementation is done via several cost functions, used when analyzing candidate trajectories, to reward trajectories with buffer distances higher than 50 meters from the next car of the lane considered, and penalize the trajectories with lower buffer distances below 50 m with the next car ahead in the same lane. And there is another cost function rewarding or penalizing trajectories resulting in collisions as well. Another feature I had to implement in order to prevent collisions was also to consider any cars predicted in different lanes compared to our own car, which would be in the process of deviating from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory. And therefore I selected car predictions from sensor_fusion data, which where approaching too much the lane borders from the candidate lane, within 1 meter of the border lane. This allowed to penalize trajectories for which the risk of an adjacent lane car would "cut the road" and cross our car trajectory at the very last second. Another part of implementation is re-using all the solutions to avoid bumping in other cars ahead, for the closest cars behind our car as well. And lastly, an important implementation against collisions is to us prediction of Sensor Fusion data, and predict the positions of other cars after my own car would travel 30 meters into a candidate trajectory, and via cost functions, penalize trajectories violating collisions and buffer minimal distances between cars ahead and behind. Below pieces of code are giving examples of those implementations to avoid collisions :|
+|Car does not have collisions| Compliance with this requirement was done in several parts of the code. One piece of implementation is by analyzing for each execution of h.onMessage(), the code analyses from sensor_fusion data (done via function bp_indexClosestCars()) if any vehicle ahead of our own car is at a distance less than 50m. It if is the case, it will decrease incrementally the speed (code of function bp_adjustAcceleration() already showed in above criteria. |
 ```
 // constants.h
 // ===========
@@ -191,7 +193,9 @@ int bp_indexClosestCars(double car_s, vector<vector<double>> sensor_fusion,
     } // end if car ahead in same lane
   } // end for each car  
 } // end function
-
+```
+Another part of implementation is done via several cost functions, used when analyzing candidate trajectories, to reward trajectories with buffer distances higher than 50 meters from the next car of the lane considered, and penalize the trajectories with lower buffer distances below 50 m with the next car ahead in the same lane. And there is another cost function rewarding or penalizing trajectories resulting in collisions as well. Another feature I had to implement in order to prevent collisions was also to consider any cars predicted in different lanes compared to our own car, which would be in the process of deviating from the center of their lanes, and deviating towards the candidate lane of the the considered trajectory. And therefore I selected car predictions from sensor_fusion data, which where approaching too much the lane borders from the candidate lane, within 1 meter of the border lane. This allowed to penalize trajectories for which the risk of an adjacent lane car would "cut the road" and cross our car trajectory at the very last second. Another part of implementation is re-using all the solutions to avoid bumping in other cars ahead, for the closest cars behind our car as well. And lastly, an important implementation against collisions is to us prediction of Sensor Fusion data, and predict the positions of other cars after my own car would travel 30 meters into a candidate trajectory, and via cost functions, penalize trajectories violating collisions and buffer minimal distances between cars ahead and behind. Below pieces of code are giving examples of those implementations to avoid collisions :
+```
 // cost.cpp functions cost_colliding_car_ahead(), cost_collided_rear_car(), and cost_car_buffer()
 =================================================================================================
 // Cost Colliding car ahead
