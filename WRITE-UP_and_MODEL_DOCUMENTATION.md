@@ -852,6 +852,6 @@ And this distance is used to spread the waypoints on the spline according to the
 
 } // end trajectoryGeneration()
 ```
-So that at the end, the output coordinate vectors `next_x_vals, next_y_vals` contain the 50 points representing the trajectory to follow by the simulator, and which will be feeded back to the simulator to get the car moving on that trajectory / path.
+So that at the end, the output coordinate vectors `next_x_vals, next_y_vals` contain the 50 points representing the trajectory to follow by the simulator, and which will be feeded back to the simulator to get the car moving on that trajectory / path and transitioning to the lane chosen and returned by bp_transition_function().
 
 
