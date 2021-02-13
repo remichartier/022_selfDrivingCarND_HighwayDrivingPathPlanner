@@ -704,13 +704,13 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
  *			- - vector<double> next_x_vals, next_y_vals : array to define new Trajectory
  *			- 
  */
- ```
+```
  
- It will do so by first changing the reference and set the new origin (`ref_x, ref_y`) to the current position of the car after the 5 first points we reuse from the previous trajectory, or if there is not previous trajectory (for instance at the startup) at the starting position of the car (`car_x, car_y`) and use the last but one point as well, in order to reuse the yaw orientation from previous trajectory (use current yaw angle if no previous trajectory).
+It will do so by first changing the reference and set the new origin (`ref_x, ref_y`) to the current position of the car after the 5 first points we reuse from the previous trajectory, or if there is not previous trajectory (for instance at the startup) at the starting position of the car (`car_x, car_y`) and use the last but one point as well, in order to reuse the yaw orientation from previous trajectory (use current yaw angle if no previous trajectory).
  
- And it will store those first 2 points in 2 vectors for x and y (`ptsx,ptsy`). This is the intent of the code below : 
+And it will store those first 2 points in 2 vectors for x and y (`ptsx,ptsy`). This is the intent of the code below : 
  
- ```
+```
 {
   // Code to follow lane and full track.
 
@@ -757,11 +757,12 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
     ptsy.push_back(ref_y_prev);
     ptsy.push_back(ref_y);
   } 
-  ```
+```
+  Using the current car coordinates in Frenet space (`car_s`) and the intended position of the car inside the selected next lane `(2+4*lane)`, plus the highway waypoints in both cartesian and Frenet coordinates (`map_waypoints_s, map_waypoints_x,map_waypoints_y`), the code generates 3 additional cartesian point coordinates (`next_wp0, next_wp1, next_wp2`), following the highway path, thanks to `map_waypoints_s, map_waypoints_x,map_waypoints_y`, and spaced of 30 meters in s coordinate. 
   
+  And it will add those 3 new points `next_wp0, next_wp1, next_wp2` to the previous 2 points already stored in `ptsx,ptsy` (So that's where if the current car position is not yet at the middle of the next selected lane, there would be a lane transition between the 2nd point in stored in `ptsx,ptsy`, and the 3rd point 30 meters away but in the right intented targeted lane. And this is done via the code below : 
   
-  
-  ```
+```
 
   // In Frenet add evenly 30m spaced points ahead of the starting reference.
   // NOTE : GOOD TRAJECTORY FOR FOLLOWING TRACK, BUT NOT FOR TURNING LEFT OR RIGHT ...
@@ -776,7 +777,11 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
   ptsy.push_back(next_wp0[1]);
   ptsy.push_back(next_wp1[1]);
   ptsy.push_back(next_wp2[1]);
+```
 
+Then the code would transform those 5 points stored in `ptsx,ptsy` into car coordinates (origin is at the car position, yaw rate of 0) so at the end of this code block, `ptsx,ptsy` are containing the coordinates of those 5 points in the car coordinates referential/space, this transformation being useful to simplify the implementation following after : 
+
+```
   // transform into car coordinates before building the spline
   for(int i=0; i < ptsx.size(); i++)
   {
@@ -787,23 +792,18 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
     ptsx[i] = shift_x * cos(0 - ref_yaw) - shift_y * sin(0 - ref_yaw);
     ptsy[i] = shift_x * sin(0 - ref_yaw) + shift_y * cos(0 - ref_yaw);
   }
-  
-  /*
-  std::cout << "car_yaw = " << car_yaw << ", " << "ref_yaw = " << ref_yaw << ", ";
-  std::cout << "ptsx[] = " ;
-  for(int i=0; i < ptsx.size(); i++)
-  {
-    std::cout << ptsx[i] << ", ";
-  }
-  std::cout << std::endl;
-  */
-  
+```
+From there, the code creates a Spline function `s` and creates a spline curve/trajectory relaying those 5 points together in the car coordinate referencial/space :
+
+```
   // Create a spline
   tk::spline s;
 
   // Set (x,y) points to the spline
   s.set_points(ptsx, ptsy);
-
+```
+Then, we start to fill the output trajectory points, by first storing in output coordinate vectors `next_x_vals, next_y_vals` the first 5 points from current trajectory provided by the simulator (`previous_path_x, previous_path_y`) : 
+```
   // Start with all of the previous path points from last time
   // Modification to only use the x first previous_path points instead of
   // all the one available
@@ -813,13 +813,18 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
     next_x_vals.push_back(previous_path_x[i]);
     next_y_vals.push_back(previous_path_y[i]);
   }
-
+```
+The code follows computing the distance driven by the spline for x = 30 meters in car coordinates 
+```
   // Calculate how to break up the spline points so that we travel at our desired reference velocity
   double target_x = 30;
   double target_y = s(target_x);
   double target_dist = sqrt(pow(target_x,2) + pow(target_y,2));
   double x_add_on = 0;
+```
 
+And this distance is used to spread the waypoints on the spline according to the current velocity of the car, and retrieving the x and y coordinates of the points on the spline, then converting them back to the cartesian space coordinates, and storing them in the output vectors `next_x_vals, next_y_vals` :  
+```
   // Fill up the rest of the path planner after filling it with previous points, we aim to output 50 pts
   // Modify previous_path_x.size() --> prev_size to only reuse 5 previous_path points at max.
   // for(int i=1; i <= 50 - previous_path_x.size(); i++)
@@ -847,4 +852,6 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
 
 } // end trajectoryGeneration()
 ```
+So that at the end, the output coordinate vectors `next_x_vals, next_y_vals` contain the 50 points representing the trajectory to follow by the simulator, and which will be feeded back to the simulator to get the car moving on that trajectory / path.
+
 
