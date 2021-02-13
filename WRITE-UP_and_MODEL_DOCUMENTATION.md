@@ -851,4 +851,20 @@ And this distance is used to spread the waypoints on the spline according to the
 ```
 So that at the end, the output coordinate vectors `next_x_vals, next_y_vals` contain the 50 points representing the trajectory to follow by the simulator, and which will be fed back to the simulator to get the car moving on that trajectory / path and transitioning to the lane chosen and returned by bp_transition_function().
 
+# Room for improvements
+## Functions Input parameters
+Functions input parameters are very lengthy, ideally if I had to continue working on this project, I would gather some car attributes into one single object, and it would simplify the list of input and output parameters for the functions of this project. For instance : 
+- car_s, car_d, ref_vel, car_x, car_y, car_yaw
 
+Same thing could be applied for the waymap coordinates, gather them in a single class/object : 
+- map_waypoints_s, map_waypoints_x, map_waypoints_y
+
+And eventually as well every couple of vectors split into one x and y coordinates but representing the same points, could be gathered into classes/objects to simplify the use of those entities especially as input/output parameters of functions, or into other classes/objects :
+- previous_path_x, previous_path_y
+- next_x_vals, next_y_vals
+- car_x, car_y
+
+## Possible trajectory analysis in Behavior Planner code
+The Behavior Planner module is not really generating different trajectory paths, it relies on the fact that for each candidate trajectory, if this leads to a lane change, the lane change will be over after 30 meters ahead, and therefore the code takes this prediction point to calculate cost of safety buffer and collision risk to programmatically pick the trajectory/lane choice with the least total cost value.
+
+Ideally, Possible trajectories should be provided to Behavior Planner and used to calculate Costs. For the purpose of this project and for the sake of simplification, I took the shortcut of only considering the lane numbers as and indication of candidate trajectories, rather than the trajectory paths themselves, taking into account that the way the trajectories are generated means that no matter what, a change of lane would be done after 30 meters driven through those trajectories. 
