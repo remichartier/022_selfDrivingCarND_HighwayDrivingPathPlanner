@@ -325,7 +325,8 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
 
   } // end for()
   
-}
+} // end function
+
 
 void bp_adjustAcceleration(double car_s, vector<vector<double>> sensor_fusion,
                            int index_car_ahead, int dist_min, double &ref_vel,
@@ -579,7 +580,7 @@ void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
  * Inputs : 
  *			- vector<fsm_state> &possible_steer, by reference
  *			- int lane
- * Return : 
+ * Output : 
  *			- vector<fsm_state> possible_steer
  */
   
