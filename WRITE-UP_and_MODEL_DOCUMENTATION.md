@@ -677,7 +677,14 @@ So the simulator, via the `h.onMessage()` function, would call `bp_transition_fu
 ```
 ## Zooming-in to the details : `trajectory_generation()` in `trajectory.cpp`
 
+This function gathers the entire trajectory/path generation implementation.
 
+- Based on the current car attributes provided by the simulator (`car_x, car_y, car_yaw, car_s`), 
+- Based on the number of points from the previous trajectory (`previous_path_x, previous_path_y`) remaining to be driven and provided by the simulater (`prev_size` which I set to `REUSE_PREVIOUS_PATH_SIZE`(=5))
+- Based on the highway map waypoints (`map_waypoints_s, map_waypoints_x, map_waypoints_x`)
+- Base on the target `lane` variable, the current velocity of the car `ref_vel`
+
+It will generate a new trajectory/path in cartesian coordinates, composed of 50 points with the coordinates stored in vectors `next_x_vals, next_y_vals`.
 
 ```
 void trajectory_generation(double car_x, double car_y, double car_yaw, double car_s, int prev_size,
@@ -697,6 +704,13 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
  *			- - vector<double> next_x_vals, next_y_vals : array to define new Trajectory
  *			- 
  */
+ ```
+ 
+ It will do so by first changing the reference and set the new origin (`ref_x, ref_y`) to the current position of the car after the 5 first points we reuse from the previous trajectory, or if there is not previous trajectory (for instance at the startup) at the starting position of the car (`car_x, car_y`) and use the last but one point as well, in order to reuse the yaw orientation from previous trajectory (use current yaw angle if no previous trajectory).
+ 
+ And it will store those first 2 points in 2 vectors for x and y (`ptsx,ptsy`). This is the intent of the code below : 
+ 
+ ```
 {
   // Code to follow lane and full track.
 
@@ -743,6 +757,11 @@ void trajectory_generation(double car_x, double car_y, double car_yaw, double ca
     ptsy.push_back(ref_y_prev);
     ptsy.push_back(ref_y);
   } 
+  ```
+  
+  
+  
+  ```
 
   // In Frenet add evenly 30m spaced points ahead of the starting reference.
   // NOTE : GOOD TRAJECTORY FOR FOLLOWING TRACK, BUT NOT FOR TURNING LEFT OR RIGHT ...
