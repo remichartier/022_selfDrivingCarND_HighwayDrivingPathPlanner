@@ -419,9 +419,223 @@ void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|car is able to change lanes| I implemented several strategies to reach that goal. First one was to implement an entire Behavior Planner to decide when to change lanes. Behavior Planner includes an FSM (Finite State Machine) with states KeepLane, LaneChangeLeft, LaneChangeRight. When the car is in a specific lane, it retrieves from Sensor Fusion the index of the car ahead and the car behind. This allows to know the distance to those cars, as well as their speed. If the current state is KeepLane, the behavior planner analyses the possible next trajectories (ie what would be the nex lanes possible), what would be the car ahead and behind after such lane changes (using prediction calculation of other cars based and Sensor Fusion data), and then the cost functions (Collision ahead or from behind, buffer distance limits, speed of cars in different lanes) allow to decide, if the state is KeepLane, if we should trigger a lane change and to which lane it should be triggered (it would pick the lane for which the cost function is the least compared to the other lanes associated costs). Once the Behavior Planner decides to switch lane, it switches to state LaneChangeRight or LaneChangeLeft and updates the lane variable, and it keeps on that ChangeLane state until the position of the car matches with the target Lane middle position, in which case it switches the state back to KeepLane state to become ready for another lane change whenever the behavior planner algorithm decides to do so again via the minimization for the cost functions associated to candidate trajectories/lanes. When the behavior planner updates the lane variable, it allows the trajectory generation function to generate the next trajectory from the current lane position to the next lane position, and that's how the lane changes happen between lane 0, 1 or 2. The ability to change lane while car is behind a slower moving car is implemented via a cost function related to speed of the the car ahead (cost_car_speed_ahead()) and also by a cost function penalizing the current lane if the buffer distance with the car ahead goes below threshold SAFE_DISTANCE_M (50 meters). And therefore those 2 cost functions would penalize the candidate trajectory to keep in the current lane by penalizing if the car ahead moves slower than the cars in adjacent lanes and if the buffer distance becomes lower than SAFE_DISTANCE_M, triggering a lane change if adjacent lanes are clear of other traffic. And the smooth change is managed in the main() function via the trajectory_generation() function, and the smooth feature is already explained above in the criteria "Max Acceleration and Jerk are not Exceeded". I included below some extract of behavior planner code implementing this whole algorithm to allow lane change, as well as the behavior planer cost calculation function and the cost function to reward or penalize lane with slower moving car ahead (cost_car_buffer() code is already showed above.|
+|car is able to change lanes| I implemented several strategies to reach that goal. First one was to implement an entire Behavior Planner to decide when to change lanes. Behavior Planner includes an FSM (Finite State Machine) with states KeepLane, LaneChangeLeft, LaneChangeRight. When the car is in a specific lane, it retrieves from Sensor Fusion the index of the car ahead and the car behind. This allows to know the distance to those cars, as well as their speed. If the current state is KeepLane, the behavior planner analyses the possible next trajectories (ie what would be the nex lanes possible), what would be the car ahead and behind after such lane changes (using prediction calculation of other cars based and Sensor Fusion data), and then the cost functions (Collision ahead or from behind, buffer distance limits, speed of cars in different lanes) allow to decide, if the state is KeepLane, if we should trigger a lane change and to which lane it should be triggered (it would pick the lane for which the cost function is the least  -cf bp_lane_decider()- compared to the other lanes associated costs). Once the Behavior Planner decides to switch lane, it switches to state LaneChangeRight or LaneChangeLeft and updates the lane variable, and it keeps on that ChangeLane state until the position of the car matches with the target Lane middle position, in which case it switches the state back to KeepLane state to become ready for another lane change whenever the behavior planner algorithm decides to do so again via the minimization for the cost functions associated to candidate trajectories/lanes. When the behavior planner updates the lane variable, it allows the trajectory generation function to generate the next trajectory from the current lane position to the next lane position, and that's how the lane changes happen between lane 0, 1 or 2. The ability to change lane while car is behind a slower moving car is implemented via a cost function related to speed of the the car ahead (cost_car_speed_ahead()) and also by a cost function penalizing the current lane if the buffer distance with the car ahead goes below threshold SAFE_DISTANCE_M (50 meters). And therefore those 2 cost functions would penalize the candidate trajectory to keep in the current lane by penalizing if the car ahead moves slower than the cars in adjacent lanes and if the buffer distance becomes lower than SAFE_DISTANCE_M, triggering a lane change if adjacent lanes are clear of other traffic. And the smooth change is managed in the main() function via the trajectory_generation() function, and the smooth feature is already explained above in the criteria "Max Acceleration and Jerk are not Exceeded". I included below some extract of behavior planner code implementing this whole algorithm to allow lane change, as well as the behavior planer cost calculation function and the cost function to reward or penalize lane with slower moving car ahead (cost_car_buffer() code is already showed above) :|
 ```
+// In behavior_planner.cpp, functions bp_transition_function(), bp_compute_cost_states() and bp_lane_decider()
+// ===============================================================================================================
+void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,double &ref_vel,
+                            vector<vector<double>> sensor_fusion, int &lane, fsm_state &state, 
+                            int &changeLaneCounter,
+                            double car_x, double car_y, double car_yaw,
+                            vector<double> previous_path_x, vector<double> previous_path_y,
+                            vector<double> map_waypoints_s, vector<double> map_waypoints_x,
+                            vector<double> map_waypoints_y, 
+                            vector<double> &next_x_vals, vector<double> &next_y_vals)
+{
+/* 
+ * Inputs : 
+ *			- int prev_size
+ *			- double car_s
+ *			- double car_d
+ *			- double end_path_s
+ *			- double &ref_vel, by reference
+ *			- <vector<vector<double>> sensor_fusion
+ *			- int lane by reference
+ *			- fsm state : current state, by reference
+ *			FOR GENERATING TRAJECTORIES : 
+ *			- double car_x, car_y, car_yaw : car position
+ *			- vector<double> previous_path_x, previous_path_y, map_waypoints_s, map_waypoints_x,
+ *                         vector<double> map_waypoints_y
+ *			- vector<double> next_x_vals, next_y_vals : array to define new Trajectory (passed by reference) 
+ * Outputs :
+ *			- int lane
+ *			- fsm state : next state
+ *			- double &ref_vel
+ *			- vector<double> next_x_vals, next_y_vals : array to define new Trajectory (passed by reference) 
+ */
 
+  // variables initialization needed
+  vector<fsm_state> possible_steer;		// could be KeepLane, LaneChangeLeft, LaneChangeRight
+  vector<double> cost_steer;			// cost vector for each steer possibilities
+  int index_car_ahead_currentLane;
+  int index_car_behind_currentLane;
+  bool need_change_lane;				// used if triggering Lane Change only due to car ahead too close
+
+  bp_indexClosestCars(car_s, sensor_fusion, lane, index_car_behind_currentLane,
+                        index_car_ahead_currentLane);  
+  // Note : Outputs are index_car_behind_currentLane and index_car_behind_currentLane
+  
+  bp_adjustAcceleration(car_s, sensor_fusion, index_car_ahead_currentLane,
+                        SAFE_DISTANCE_M, ref_vel, need_change_lane);
+  // Note : Output = ref_vel, need_change_lane
+
+  // FSM to decide next steps and actions
+  switch(state){
+      
+    case KeepLane :
+      //if(need_change_lane) --> Only allows Lane Change when too close to car ahead
+      //if(true) --> Could enable change anytime Cost computation judge necessary
+      if(true)
+      {
+        // check what is possible ? Straight(=KeepLane), Left, Right ?
+        bp_possible_steer(possible_steer,lane); 
+        
+        // Now, need to generate predictions (positions of car_s + 30m or 50m)
+        double car_s_predict;
+        vector<double> predictions;
+        
+        predictions_get(car_s, ref_vel, sensor_fusion, car_s_predict, predictions);
+        // Note : Outputs are 'car_s_predict´ and 'predictions'
+                
+        // Now, according to steer possible, evaluate current cost/risk
+        // like if Straight, colliding car head ? Speed car ahead, Distance car ahead, 
+        // Also do same for if Left or Right possible.
+
+        bp_compute_cost_states(car_s, sensor_fusion,possible_steer,lane,
+                            index_car_ahead_currentLane, index_car_behind_currentLane,
+                            ref_vel, cost_steer, predictions, car_s_predict); 
+        // Note : output is 'cost_steer' vector
+        
+        
+        // This function will compute the minimum cost from cost_steer[],
+        // and therefore pick the next state (KeepLane, Right or Left) and 
+        // corresponding lane number to apply. This updated lane number value
+        // will be used in main() to generate the new trajectory via trajectory_generation()
+        // using this new 'lane' updated value
+        bp_lane_decider(possible_steer, cost_steer, lane, state, changeLaneCounter);
+        // Output is state + lane.
+
+      } // end if need_change_lane
+      break;
+
+    case LaneChangeLeft:
+    case LaneChangeRight:
+      // wait for car position to be at position (d) corresponding to 'lane'
+      // This would indicate LaneChange procedure is over.
+      // If over, then next state should be KeepLane
+      // std::cout << "call bp_isLaneChangeDone() " << std::endl;
+      if(bp_isLaneChangeDone(lane, car_d))
+      {
+        state = KeepLane;
+      }
+      break;
+  } // end switch()
+} // end function
+
+void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion, 
+                            vector<fsm_state> possible_steer, int lane,
+                            int index_car_ahead_currentLane,
+                            int index_car_behind_currentLane,
+                            double ref_vel, vector<double> &cost_steer,
+                            vector<double> predictions, double car_s_predict)
+/* 
+ * Inputs : 
+ *			- double car_s, 
+ *			- vector<vector<double>> sensor_fusion
+ *			- vector<fsm_state> possible_steer
+ *			- int lane
+ *			- int index_car_ahead_currentLane,
+ *			- int index_car_behind_currentLane,
+ *			- double ref_vel
+ *			- vector<double> cost_steer, by reference
+ * Outputs :
+ *			- vector<double> cost_steer
+*/
+{
+  // for each possible steer/trajectory (KeepLane, Left, Right)
+  for (int i=0; i < possible_steer.size(); i++)
+  {
+    double cost(0.0),cost1,cost2(0.0),cost3,cost4(0.0),cost5,cost6,cost7(0);
+    int index_car_ahead;
+    int index_car_behind;
+
+    int next_lane = bp_next_lane(possible_steer[i], lane);
+    if(possible_steer[i] != KeepLane)
+    {
+      bp_indexClosestCars(car_s, sensor_fusion, next_lane, index_car_behind,
+                          index_car_ahead);
+      // Note : Outputs :  index_car_behind, index_car_ahead
+    } else
+    {
+      // Done just before, info in index_car_behind_currentLane and 
+      // index_car_ahead_currentLane
+      index_car_ahead = index_car_ahead_currentLane;
+      index_car_behind = index_car_behind_currentLane;
+    }
+
+    cost1 = cost_colliding_car_ahead(index_car_ahead, predictions, car_s_predict);
+    
+    if(possible_steer[i] != KeepLane)
+    {
+      cost2 = cost_collided_rear_car(index_car_behind, predictions, car_s_predict);
+    }
+
+    cost3 = cost_car_buffer(car_s_predict, predictions, SAFE_DISTANCE_M,
+                              index_car_ahead);
+    
+    if(possible_steer[i] != KeepLane)
+    {
+      cost4 = cost_car_buffer(car_s_predict, predictions, SAFE_DISTANCE_M,
+                              index_car_behind);
+    }
+    
+    cost5 = cost_car_speed_ahead(ref_vel, sensor_fusion,index_car_ahead);   
+    
+    cost = cost1 + cost2 + cost3 + cost4 + cost5;
+   
+    // store cost of this steer possibility in cost_steer vector
+    cost_steer.push_back(cost);
+  } // end for()
+} // end function
+
+void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
+                     int &lane, fsm_state &state, int &changeLaneCounter)
+ /* 
+ * Inputs : 
+ *			- vector<fsm_state> possible_steer
+ *			- vector<double> cost_steer
+ *			- int &lane, by reference
+ *			- fsm_state &state, by reference
+ *			- int changeLaneCounter, by reference
+ * Return : 
+ *			- int lane 
+ *			- fsm_state state
+ *			- int changeLaneCounter
+ */  
+{
+  // Need to choose the steering for which we get the minimum cost
+  int index=0;
+  double cost = cost_steer[0];
+  
+  for(int i=1; i < possible_steer.size(); i++)
+  {
+    if(cost_steer[i] < cost)
+    {
+      cost = cost_steer[i];
+      index = i;
+    } // end if
+  } // end for
+  
+  // Now have the index for the steer with the least cost
+  // set next lane / state
+  switch(possible_steer[index])
+  {
+    case LaneChangeLeft :
+      state = LaneChangeLeft;
+      lane -= 1;
+      changeLaneCounter ++;
+      std::cout << "state --> LaneChangeLeft(#" << changeLaneCounter << ")" <<std::endl;
+      break;
+    case LaneChangeRight :
+      state = LaneChangeRight;
+      lane += 1;
+      changeLaneCounter ++;
+      std::cout << "state --> LaneChangeRight(#" << changeLaneCounter << ")" <<std::endl;
+      break;
+    default: // if KeepLane, nothing to change
+      break;
+  } // end switch()  
+} // end function
 ```
 
 
