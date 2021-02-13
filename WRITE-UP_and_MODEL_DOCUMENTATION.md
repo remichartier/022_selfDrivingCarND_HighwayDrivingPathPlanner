@@ -26,13 +26,15 @@ root@18af971d902a:/home/workspace/CarND-Path-Planning-Project/build#
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
 |Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias|
-|car drives according to the speed limit| The implementation sets the maximum speed to 49.5 mph for the car, ensuring the car does not exceed the speed limit of 50 mph. It also ensures to not drive slower than speed limit by always keep accelerating until 49.5 mph unless car becomes too close to any cars ahead in the same lane. And this is also done by having a Cost Function which is encouraging to switch Lanes towards faster lane speeds rather than any other lane speeds. This is done thanks to the following pieces of code spread in different files/functions :|
+|car drives according to the speed limit| The implementation sets the maximum speed to 49.5 mph for the car, ensuring the car does not exceed the speed limit of 50 mph. cf following pieces of code spread in different files/functions with futher explanations as shown below : |
 ```
 // constants.h
 // ===========
 #define MAX_SPEED_MPH 				49.5
 #define MAX_ACCEL 					0.224
-
+```
+It also ensures to not drive slower than speed limit by always keeping accelerating until 49.5 mph unless car becomes too close to any cars ahead in the same lane. cf the code below : 
+```
 // behavior_planner.cpp, function bp_adjustAcceleration()
 // ======================================================
 // Ensures to not drive slower than speed limit
@@ -55,7 +57,9 @@ root@18af971d902a:/home/workspace/CarND-Path-Planning-Project/build#
     std::cout << ", speed UP, ref_vel = " << ref_vel << std::endl;
     ref_vel += MAX_ACCEL;
   }  
-  
+```
+And this is also done by having a Cost Function which is encouraging to switch Lanes towards faster lane speeds rather than any other slower lane speeds. This is done thanks to the following pieces of code below :
+```
 // cost.cpp / cost_car_speed_ahead() function used to lean towards lane with faster speed cars ahead
 // =================================================================================================
 // behavior_planner.cpp will screen any lane candidate for the next car ahead and 
