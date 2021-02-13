@@ -196,7 +196,7 @@ int main() {
 
           
           // call to TRAJECTORY GENERATION, right now to generate trajectory to follow highway waypoints
-          // or to change tranjectory to change lane if lane variable is changed via earlier function
+          // or to change trajectory to change lane if lane variable is changed via earlier function
           // bp_transition_function()
           // std::cout << "call trajectory_generation("<<lane<<")"<<std::endl;
           trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
