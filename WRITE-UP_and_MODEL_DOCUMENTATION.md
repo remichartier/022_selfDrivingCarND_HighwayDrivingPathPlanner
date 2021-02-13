@@ -675,7 +675,8 @@ So the simulator, via the `h.onMessage()` function, would call `bp_transition_fu
                                map_waypoints_s, map_waypoints_x, map_waypoints_y,
                                lane, ref_vel, next_x_vals, next_y_vals);
 ```
-## Zooming-in to the details : `trajectory_generation()`
+## Zooming-in to the details : `trajectory_generation()` in `trajectory.cpp`
+
 
 
 ```
