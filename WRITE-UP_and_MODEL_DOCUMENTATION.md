@@ -645,6 +645,35 @@ void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer
 
 # Model Description
 
-Explaining the code model for generating paths, how the code works and why I wrote it that way.
-The code model for generating paths is described in detail. This can be part of the README or a separate doc labeled "Model Documentation
+Goal reminder : 
+- Explaining the code model for generating paths, how the code works and why I wrote it that way.
+- The code model for generating paths is described in detail. This can be part of the README or a separate doc labeled "Model Documentation.
+
+## High Level Description
+In order to generate trajectory paths, I started from the example given in the project video course, both to follow the highway waypoints, and also to operate lane change. Every time the simulator would give back the and to our main.cpp to generate the next trajectory, it basically took the current trajectory not yet driven/consumed by the car, and it generated a trajectory of 50 points following the highway waypoints, centered in the middle of a specific lane, and it filled the remaining points of the current trajectory with the next generated trajectory to fill a 50 points trajectory array, to be feeded it back to the simulator.
+
+This implementation of path trajectory uses the lane variable. So just by changing the lane variable, this implementation would generate a trajectory between one lane to another, or just following the same lane, using the spline function and library.
+
+I optimized this first implementation for this project purpose by only reusing 5 points from the previous trajectory, provided from the simulator, and filled the next 45 points needed in the trajectory path array to feed the simulator, with any new trajectory that the behavior planner (`behavior_planner.cpp`) would decide to follow, via the variable lane.
+
+So the simulator, via the `h.onMessage()` function, would call `bp_transition_function()`. This function would decide which lane to select next. it would return the lane variable, which would be injected into the `trajectory_generation()` function to generate the next trajectory path, and send it back to the simulator to move the car ahead on that trajectory. This is done in the `h.onMessage()` function via the following piece of code :  
+```
+          // Call to FSM TRANSITION FUNCTION to decide KeepLane or ChangeLane Left or Right
+          bp_transition_function(prev_size, car_s, car_d, end_path_s, ref_vel,
+                                 sensor_fusion, lane, state, changeLaneCounter,
+                                 car_x, car_y, car_yaw,
+                                 previous_path_x, previous_path_y,
+                                 map_waypoints_s, map_waypoints_x, map_waypoints_y,
+                                 next_x_vals, next_y_vals);
+
+          
+          // call to TRAJECTORY GENERATION, right now to generate trajectory to follow highway waypoints
+          // or to change tranjectory to change lane if lane variable is changed via earlier function
+          // bp_transition_function()
+          trajectory_generation(car_x, car_y, car_yaw, car_s, prev_size,
+                               previous_path_x, previous_path_y,
+                               map_waypoints_s, map_waypoints_x, map_waypoints_y,
+                               lane, ref_vel, next_x_vals, next_y_vals);
+```
+## Zoooming-in to the details : `trajectory_generation()`
 
