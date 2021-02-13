@@ -354,7 +354,7 @@ And lastly, an important implementation against collisions is to use prediction 
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|car stays in its lane, except for the time between changing lanes| I complied to this requirement by using the trajectory generation powered with spline.h and suggested by the project course video, only generating splines for which lanes are switched within a 30 meters distance, and for which the splines align with the middle of the target lane at the end of the first 30 meters of the spline trajectory generation and stays in this middle lane for the next 60 meters after. Also, to keep the car within the 3 lanes on the right hand side of the road, I restrict the lane numbers to be only between 0 to 2, via LANE_MIN and LANE_MAX constants ie the 3 right hand side lanes of the road, and I apply this restriction whenever considering other lane trajectories. All those compliances are implemented via the following pieces of code, some of them already partly mentioned in above criterias : |
+|car stays in its lane, except for the time between changing lanes| I complied to this requirement by using the trajectory generation powered with spline.h and suggested by the project course video, only generating splines for which lanes are switched within a 30 meters distance, and for which the splines align with the middle of the target lane at the end of the first 30 meters of the spline trajectory generation and stays in this middle lane for the next 60 meters after. : |
 ```
 // trajectory.cpp / trajectory_generation()
 // ========================================
@@ -371,6 +371,9 @@ And lastly, an important implementation against collisions is to use prediction 
   ptsy.push_back(next_wp0[1]);
   ptsy.push_back(next_wp1[1]);
   ptsy.push_back(next_wp2[1]);
+```
+Also, to keep the car within the 3 lanes on the right hand side of the road, I restrict the lane numbers to be only between 0 to 2, via LANE_MIN and LANE_MAX constants ie the 3 right hand side lanes of the road, and I apply this restriction whenever considering other lane trajectories. All those compliances are implemented via the following pieces of code, some of them already partly mentioned in above criteria :
+```
 
 // constants.h
 // ===========
@@ -402,7 +405,7 @@ void bp_possible_steer(vector<fsm_state> &possible_steer,int lane)
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|car is able to change lanes| I implemented several strategies to reach that goal. First one was to implement an entire Behavior Planner to decide when to change lanes. Behavior Planner includes an FSM (Finite State Machine) with states KeepLane, LaneChangeLeft, LaneChangeRight. When the car is in a specific lane, it retrieves from Sensor Fusion the index of the car ahead and the car behind. This allows to know the distance to those cars, as well as their speed. If the current state is KeepLane, the behavior planner analyses the possible next trajectories (ie what would be the next lanes possible), what would be the car ahead and behind after such lane changes (using prediction calculation of other cars based and Sensor Fusion data), and then the cost functions (Collision ahead or from behind, buffer distance limits, speed of cars in different lanes) allow to decide, if the state is KeepLane, if we should trigger a lane change and to which lane it should be triggered (it would pick the lane for which the cost function is the least  -cf bp_lane_decider()- compared to the other lanes associated costs). Once the Behavior Planner decides to switch lane, it switches to state LaneChangeRight or LaneChangeLeft and updates the lane variable, and it keeps on that ChangeLane state until the position of the car matches with the target Lane middle position, in which case it switches the state back to KeepLane state to become ready for another lane change whenever the behavior planner algorithm decides to do so again via the minimization for the cost functions associated to candidate trajectories/lanes. When the behavior planner updates the lane variable, it allows the trajectory generation function to generate the next trajectory from the current lane position to the next lane position, and that's how the lane changes happen between lane 0, 1 or 2. The ability to change lane while car is behind a slower moving car is implemented via a cost function related to speed of the the car ahead (cost_car_speed_ahead()) and also by a cost function penalizing the current lane if the buffer distance with the car ahead goes below threshold SAFE_DISTANCE_M (50 meters). And therefore those 2 cost functions would penalize the candidate trajectory to keep in the current lane by penalizing if the car ahead moves slower than the cars in adjacent lanes and if the buffer distance becomes lower than SAFE_DISTANCE_M, triggering a lane change if adjacent lanes are clear of other traffic. And the smooth change is managed in the main() function via the trajectory_generation() function, and the smooth feature is already explained above in the criteria "Max Acceleration and Jerk are not Exceeded". I included below some extract of behavior planner code implementing this whole algorithm to allow lane change, as well as the behavior planer cost calculation function and the cost function to reward or penalize lane with slower moving car ahead (cost_car_buffer() code is already showed above) :|
+|car is able to change lanes| I implemented several strategies to reach that goal. First one was to implement an entire Behavior Planner to decide when to change lanes. Behavior Planner includes an FSM (Finite State Machine) with states KeepLane, LaneChangeLeft, LaneChangeRight. When the car is in a specific lane, it retrieves from Sensor Fusion the index of the car ahead and the car behind. This allows to know the distance to those cars, as well as their speed. If the current state is KeepLane, the behavior planner analyses the possible next trajectories (ie what would be the next lanes possible), what would be the car ahead and behind after such lane changes (using prediction calculation of other cars based and Sensor Fusion data), and then the cost functions (Collision ahead or from behind, buffer distance limits, speed of cars in different lanes) allow to decide, if the state is KeepLane, if we should trigger a lane change and to which lane it should be triggered (it would pick the lane for which the cost function is the least  -cf bp_lane_decider()- compared to the other lanes associated costs). Once the Behavior Planner decides to switch lane, it switches to state LaneChangeRight or LaneChangeLeft and updates the lane variable, and it keeps on that ChangeLane state until the position of the car matches with the target Lane middle position, in which case it switches the state back to KeepLane state to become ready for another lane change whenever the behavior planner algorithm decides to do so again via the minimization for the cost functions associated to candidate trajectories/lanes. When the behavior planner updates the lane variable, it allows the trajectory generation function to generate the next trajectory from the current lane position to the next lane position, and that's how the lane changes happen between lane 0, 1 or 2. I included below some extract of behavior planner code implementing this whole algorithm to allow lane change :|
 ```
 // In behavior_planner.cpp, functions bp_transition_function(), bp_compute_cost_states() and bp_lane_decider()
 // ===============================================================================================================
@@ -504,7 +507,9 @@ void bp_transition_function(int prev_size, double car_s, double car_d, double en
       break;
   } // end switch()
 } // end function
-
+```
+As well as the behavior planer cost calculation function :
+``` 
 void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion, 
                             vector<fsm_state> possible_steer, int lane,
                             int index_car_ahead_currentLane,
@@ -570,7 +575,10 @@ void bp_compute_cost_states(double car_s, vector<vector<double>> sensor_fusion,
     cost_steer.push_back(cost);
   } // end for()
 } // end function
+```
 
+
+```
 void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer, 
                      int &lane, fsm_state &state, int &changeLaneCounter)
  /* 
@@ -621,6 +629,12 @@ void bp_lane_decider(vector<fsm_state> possible_steer, vector<double> cost_steer
 } // end function
 ```
 
+And the cost function to reward or penalize lane with slower moving car ahead (cost_car_speed_ahead() code is already showed above).
+
+
+The ability to change lane while car is behind a slower moving car is implemented via a cost function related to speed of the the car ahead (cost_car_speed_ahead()) and also by a cost function penalizing the current lane if the buffer distance with the car ahead goes below threshold SAFE_DISTANCE_M (50 meters). And therefore those 2 cost functions would penalize the candidate trajectory to keep in the current lane by penalizing if the car ahead moves slower than the cars in adjacent lanes and if the buffer distance becomes lower than SAFE_DISTANCE_M, triggering a lane change if adjacent lanes are clear of other traffic. 
+
+And the smooth change is managed in the main() function via the trajectory_generation() function, and the smooth feature is already explained above in the criteria "Max Acceleration and Jerk are not Exceeded". 
 
 | Criteria Reflection| Meets Specifications |
 |-----------|----------------|
