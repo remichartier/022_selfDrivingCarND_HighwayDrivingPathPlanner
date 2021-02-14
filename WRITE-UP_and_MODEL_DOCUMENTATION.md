@@ -25,7 +25,7 @@ root@18af971d902a:/home/workspace/CarND-Path-Planning-Project/build#
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias, as can be shown in this video I uploaded in [Youtube](https://youtu.be/0z2s2IvEvIs) (https://youtu.be/0z2s2IvEvIs) and well as the screenshot below : |
+|Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias, as can be shown in this video I uploaded in [Youtube](https://youtu.be/0z2s2IvEvIs) (https://youtu.be/0z2s2IvEvIs) as well as the screenshot below : |
 
 ![Simulator Screenshot after more than one highway lap driven](20210213_154733_ScreenshotSimulatorPastOneLap.png)
 
