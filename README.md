@@ -2,7 +2,9 @@ Note : cf [WRITE-UP_and_MODEL_DOCUMENTATION.md](WRITE-UP_and_MODEL_DOCUMENTATION
 
 # CarND-Path-Planning-Project
 Self-Driving Car Engineer Nanodegree Program
+
 Cf video example on [Youtube](https://youtu.be/0z2s2IvEvIs) (https://youtu.be/0z2s2IvEvIs) as well as the screenshot below :
+
 ![Simulator Screenshot after more than one highway lap driven](20210213_154733_ScreenshotSimulatorPastOneLap.png)
    
 ### Simulator.
