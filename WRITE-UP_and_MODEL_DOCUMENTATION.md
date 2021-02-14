@@ -25,7 +25,11 @@ root@18af971d902a:/home/workspace/CarND-Path-Planning-Project/build#
 
 | Criteria Valid Trajectories| Meets Specifications |
 |-----------|----------------|
-|Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias|
+|Car able to drive at least 4.32 miles without incident| This implementation allows the car to drive more than one lap without incidents as defined in below criterias, cf screenshot below : |
+(Simulator Screenshot after more than one highway lap driven)[20210213_154733_ScreenshotSimulatorPastOneLap.png]
+
+| Criteria Valid Trajectories| Meets Specifications |
+|-----------|----------------|
 |car drives according to the speed limit| The implementation sets the maximum speed to 49.5 mph for the car, ensuring the car does not exceed the speed limit of 50 mph. cf following pieces of code spread in different files/functions with futher explanations as shown below : |
 ```
 // constants.h
