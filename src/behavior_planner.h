@@ -17,19 +17,19 @@
  *        Add int bp_next_lane()
  *        bp_compute_cost_states()
  *        Add predictions + car_s_predict as input parameter to bp_compute_cost_states()
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code
  */
 
 #ifndef BEHAVIOR_PLANNER_H
 #define BEHAVIOR_PLANNER_H
 
 #include <vector>
-#include <math.h>
 
 using std::vector;
 
 
 enum fsm_state { KeepLane, LaneChangeLeft, LaneChangeRight };
-enum direction { AHEAD, BEHIND};
 
 void bp_transition_function(int prev_size, double car_s, double car_d, double end_path_s,
                             double &ref_vel, vector<vector<double>> sensor_fusion, 
@@ -70,18 +70,6 @@ void bp_generate_trajectories(vector<vector<double>> &trajectories_x,
                               vector<double> map_waypoints_s, vector<double> map_waypoints_x,
                               vector<double> map_waypoints_y, double ref_vel);
 
-// functions not used anymore I think : 
-
-int bp_indexClosestCarAhead(double car_s, vector<vector<double>> sensor_fusion, 
-                               int lane);
-  
-bool bp_isCarInLaneTooClose(int prev_size, double car_s, double end_path_s, 
-                            vector<vector<double>> sensor_fusion, int lane, int dist_min);
-
 void bp_possible_steer(vector<fsm_state> &possible_steer,int lane);
-
-void bp_next_lanes_possible(vector<fsm_state> &possible_next_move, bool &too_close,
-                            int prev_size, double car_s, double end_path_s, 
-                            vector<vector<double>> sensor_fusion, int lane);
 
 #endif  // BEHAVIOR_PLANNER_H

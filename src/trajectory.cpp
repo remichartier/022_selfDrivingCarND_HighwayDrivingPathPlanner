@@ -3,11 +3,17 @@
  * v001 : try to functionalize TrajectoryGeneration(), add trajectory.cpp file
  * v002 : working version so far with bug prev_size fixed  
  * v003 : add input/ouput comments for trajectory_generation()
+ * TAGGED v1.0 on Github : Working version, Change Lane if too close to car ahead
+ *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code  
  */
 #include "trajectory.h"
 #include "spline.h" // for polynomials
 #include "helpers.h" // for deg2rad()
 #include <iostream> // for std::cout / std::endl
+#include <math.h> // for cos/sin/atan2 functions
+
 
 
 void trajectory_generation(double car_x, double car_y, double car_yaw, double car_s, int prev_size,

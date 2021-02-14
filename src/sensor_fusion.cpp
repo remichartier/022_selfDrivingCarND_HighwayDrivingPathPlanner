@@ -1,6 +1,10 @@
 /* sensor_fusion.cpp to gather functions related to sensor_fusion
  * History :
  * v01 : first version, get_index_speed_mph()
+ * TAGGED v1.0 on Github : Working version, Change Lane if too close to car ahead
+ *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code 
  */
 #include <math.h> // for sqrt()
 #include "sensor_fusion.h"

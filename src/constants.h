@@ -8,12 +8,6 @@
 #ifndef CONSTANTS_H
 #define CONSTANTS_H
 
-//#include <vector>
-//#include <math.h>
-//#include "fsm.h"
-
-//using std::vector;
-
 #define MAX_SPEED_MPH 				49.5
 #define NONE						-1
 

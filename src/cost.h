@@ -6,15 +6,16 @@
  * v02 : add cost_car_cutting_lane_ahead(), 
  *       add cost_colliding_car_ahead(), cost_collided_rear_car(),
  *       cost_car_buffer()
+ * TAGGED v1.0 on Github : Working version, Change Lane if too close to car ahead
+ *        Test : Enable Lane change anytime Cost computation judge necessary
+ * TAGGED v1.1 on Github (Working version, changing lanes depending of costs
+ *        Cleanup of code 
  */
 
 #ifndef COST_H
 #define COST_H
 
 #include <vector>
-//#include <math.h>
-//#include "fsm.h"
-#include "behavior_planner.h"
 
 using std::vector;
 
@@ -29,16 +30,7 @@ double cost_collided_rear_car(int index_car_behind, vector<double> predictions,
 double cost_car_buffer(double car_s_predict, vector<double> predictions, double dist_min,
                               int index_car);
   
-// Not used anymore I think
-
-double cost_car_distance(double car_s, vector<vector<double>> sensor_fusion, 
-                               int dist_min, int next_car_index);
-
 double cost_car_speed_ahead(double ref_vel,  vector<vector<double>> sensor_fusion, 
                             int next_car_index);
-
-double cost_car_cutting_lane_ahead(vector<vector<double>> sensor_fusion, int lane, 
-                                   fsm_state action, int index_car_ahead);
-
 
 #endif  // COST_H
